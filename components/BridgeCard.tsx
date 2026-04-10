@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import type { Route } from "@lifi/sdk";
@@ -16,6 +17,7 @@ import { getChainName, isSupportedChainId } from "@/lib/chains";
 import { DEFAULT_SLIPPAGE } from "@/lib/env";
 import { toHumanBridgeError } from "@/lib/errors";
 import { formatTokenAmount, getRoutePreview, parseTokenAmount } from "@/lib/format";
+import { trackEvent } from "@/lib/analytics";
 import { useBridgeStore } from "@/lib/store";
 import { extractTransactionProgress } from "@/lib/transactions";
 import { useBestRoute } from "@/hooks/useBestRoute";
@@ -24,6 +26,7 @@ import type { BridgeExecutionState, RoutePreference, TransactionHistoryItem } fr
 
 const TransactionStatusModal = lazy(() => import("@/components/TransactionStatusModal"));
 const ROUTE_PREFERENCES: RoutePreference[] = ["CHEAPEST", "FASTEST", "BEST_RECEIVED"];
+const testWalletMode = process.env.NEXT_PUBLIC_ENABLE_TEST_WALLET === "true";
 
 export function BridgeCard() {
   const { address, isConnected } = useAccount();
@@ -78,13 +81,13 @@ export function BridgeCard() {
     chainId: fromChainId,
     token: selectedToken && validTokenAddress && !isNativeToken ? (selectedToken.address as Address) : undefined,
     query: {
-      enabled: Boolean(address && selectedToken && validTokenAddress),
+      enabled: Boolean(address && selectedToken && validTokenAddress && !testWalletMode),
       staleTime: 15_000,
     },
   });
 
   const insufficientBalance =
-    Boolean(parsedAmount && balanceQuery.data) && parsedAmount! > balanceQuery.data!.value;
+    !testWalletMode && Boolean(parsedAmount && balanceQuery.data) && parsedAmount! > balanceQuery.data!.value;
 
   const validationError = getValidationError({
     amount,
@@ -121,6 +124,31 @@ export function BridgeCard() {
     fromChainId,
   });
 
+  useEffect(() => {
+    if (!bestRoute) {
+      return;
+    }
+
+    trackEvent("bridge_route_loaded", {
+      from_chain_id: fromChainId,
+      route_id: bestRoute.id,
+      route_preference: routePreference,
+      to_chain_id: toChainId,
+    });
+  }, [bestRoute, fromChainId, routePreference, toChainId]);
+
+  useEffect(() => {
+    if (!routeQuery.error) {
+      return;
+    }
+
+    Sentry.captureException(routeQuery.error, {
+      tags: {
+        source: "route_quote",
+      },
+    });
+  }, [routeQuery.error]);
+
   async function executeBridge(routeToExecute: Route) {
     if (!isConnected || !address || !routeToExecute || validationError) {
       return;
@@ -136,6 +164,12 @@ export function BridgeCard() {
     });
 
     try {
+      trackEvent("bridge_started", {
+        from_chain_id: routeToExecute.fromChainId,
+        route_id: routeToExecute.id,
+        to_chain_id: routeToExecute.toChainId,
+      });
+
       if (currentChainId !== fromChainId) {
         setExecution({ phase: "switching_network", route: routeToExecute });
         await switchChainAsync({ chainId: fromChainId });
@@ -167,9 +201,24 @@ export function BridgeCard() {
         txHash: progress.txHash,
         txLink: progress.txLink,
       });
+      trackEvent("bridge_succeeded", {
+        from_chain_id: executedRoute.fromChainId,
+        route_id: executedRoute.id,
+        to_chain_id: executedRoute.toChainId,
+      });
       pushHistoryItem(createHistoryItem({ route: executedRoute, status: "SUCCESS", txHash: progress.txHash, txLink: progress.txLink }));
     } catch (error) {
       const humanError = toHumanBridgeError(error);
+      Sentry.captureException(error, {
+        tags: {
+          source: "bridge_execution",
+        },
+      });
+      trackEvent("bridge_failed", {
+        from_chain_id: routeToExecute.fromChainId,
+        route_id: routeToExecute.id,
+        to_chain_id: routeToExecute.toChainId,
+      });
       setExecution((current) => ({
         ...current,
         phase: "failed",
@@ -238,7 +287,7 @@ export function BridgeCard() {
       fromAmount: route ? `${formatTokenAmount(route.fromAmount, route.fromToken.decimals)} ${route.fromToken.symbol}` : amount,
       fromChainId,
       fromSymbol: route?.fromToken.symbol ?? selectedToken?.symbol ?? "Token",
-      id: `${Date.now()}-${status}-${txHash ?? Math.random().toString(36).slice(2, 8)}`,
+      id: `${Date.now()}-${status}-${txHash ?? crypto.randomUUID()}`,
       routePreview: route ? getRoutePreview(route) : "LI.FI route",
       status,
       toAmount: route ? `${formatTokenAmount(route.toAmount, route.toToken.decimals)} ${route.toToken.symbol}` : undefined,
@@ -249,15 +298,15 @@ export function BridgeCard() {
     };
   }
 
-  return (
+    return (
     <>
-      <div className="w-full max-w-[480px] rounded-lg border border-zinc-800 bg-[#0d100f] p-3 shadow-2xl shadow-black/40 sm:p-4">
+      <div className="w-full max-w-[480px] rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(15,18,22,0.96),rgba(10,12,15,0.92))] p-3 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur sm:p-4">
         <div className="mb-4 flex items-start justify-between gap-4 px-1 pt-1">
           <div>
             <h2 className="text-xl font-semibold text-white">Bridge</h2>
             <p className="mt-1 text-sm text-zinc-500">Ethereum, BNB Chain, Polygon, Base, Arbitrum, Avalanche</p>
           </div>
-          <div className="rounded-md border border-[#ba9eff]/25 bg-[#ba9eff]/10 px-2 py-1 text-xs font-medium text-[#e4c6ff]">
+          <div className="brand-chip rounded-md border px-2 py-1 text-xs font-medium">
             LI.FI
           </div>
         </div>
@@ -273,7 +322,7 @@ export function BridgeCard() {
                 setFromChainId(nextFrom);
                 setToChainId(fromChainId);
               }}
-              className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-300 transition hover:border-[#ba9eff]/60 hover:text-[#e4c6ff] sm:mb-0"
+              className="brand-border-hover mx-auto flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-300 sm:mb-0"
             >
               <span aria-hidden>↓</span>
             </button>
@@ -299,8 +348,8 @@ export function BridgeCard() {
                     onClick={() => setRoutePreference(preference)}
                     className={`min-h-11 rounded-md px-2 text-xs font-semibold transition ${
                       routePreference === preference
-                        ? "bg-[#ba9eff] text-zinc-950"
-                        : "border border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-[#ba9eff]/60 hover:text-[#e4c6ff]"
+                        ? "brand-primary-button"
+                        : "brand-border-hover border border-zinc-800 bg-zinc-950 text-zinc-300"
                     }`}
                   >
                     {getRoutePreferenceLabel(preference)}
@@ -316,7 +365,7 @@ export function BridgeCard() {
               <select
                 value={slippage}
                 onChange={(event) => setSlippage(Number(event.target.value))}
-                className="h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none transition focus:border-[#ba9eff]/70"
+                className="brand-border-hover h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus:border-[rgb(var(--brand-accent-rgb)/0.7)]"
               >
                 <option value={0.003}>0.3%</option>
                 <option value={0.005}>0.5%</option>
@@ -347,7 +396,7 @@ export function BridgeCard() {
             type="button"
             disabled={!canBridge && !networkMismatch}
             onClick={handleBridge}
-            className="h-[52px] w-full rounded-lg bg-[#ba9eff] px-4 text-base font-semibold text-zinc-950 transition hover:bg-[#c8b5ff] disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+            className="brand-primary-button h-[52px] w-full rounded-lg px-4 text-base font-semibold disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
           >
             {buttonLabel}
           </button>

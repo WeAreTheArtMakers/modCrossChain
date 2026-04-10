@@ -39,7 +39,7 @@ export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelecto
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-14 w-full items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-left outline-none transition hover:border-[#ba9eff]/60"
+        className="brand-border-hover flex h-14 w-full items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-left outline-none"
       >
         {selectedToken ? (
           <span className="flex min-w-0 items-center gap-3">
@@ -64,7 +64,7 @@ export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelecto
             onChange={(event) => setSearch(event.target.value)}
             autoFocus
             placeholder="Search token"
-            className="mb-2 h-10 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-[#ba9eff]/70"
+            className="brand-border-hover mb-2 h-10 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[rgb(var(--brand-accent-rgb)/0.7)]"
           />
 
           <div className="max-h-72 overflow-y-auto pr-1">

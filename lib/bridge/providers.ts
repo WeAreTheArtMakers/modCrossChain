@@ -15,6 +15,7 @@ export type BridgeRouteRequest = {
 
 export type BridgeRouteResponse = {
   bestRoute: Route;
+  comparisons: Partial<Record<RoutePreference, Route | undefined>>;
   destinationToken: Token;
   routes: Route[];
 };

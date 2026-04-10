@@ -17,7 +17,7 @@ export function ChainSelect({ label, value, onChange }: ChainSelectProps) {
       <select
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-[52px] w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm font-medium text-zinc-100 outline-none transition focus:border-[#ba9eff]/70"
+        className="brand-border-hover h-[52px] w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm font-medium text-zinc-100 outline-none focus:border-[rgb(var(--brand-accent-rgb)/0.7)]"
       >
         {SUPPORTED_CHAINS.map((chain) => (
           <option key={chain.id} value={chain.id}>

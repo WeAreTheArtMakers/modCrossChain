@@ -8,4 +8,6 @@ yarn-error.log*
 .DS_Store
 dist
 coverage
+playwright-report
+test-results
 tsconfig.tsbuildinfo

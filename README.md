@@ -29,7 +29,7 @@
 
 modCrossChain is a wallet-native bridge frontend for Ethereum, BNB Chain, Polygon, Base, Arbitrum, and Avalanche. It uses the LI.FI aggregator SDK for route discovery and execution, keeps signing inside the user's wallet, and avoids custom bridge protocol logic entirely.
 
-The UI stays focused on execution: one centered bridge card, visible fee disclosure, route comparison for cheapest / fastest / best received, a transaction modal with copy-hash and retry actions, and local browser history for recent bridge attempts.
+The UI stays focused on execution: a bridge card paired with a live desktop showcase panel, visible fee disclosure, route comparison for cheapest / fastest / best received, a transaction modal with copy-hash and retry actions, route risk and low-liquidity warnings, and local browser history for recent bridge attempts.
 
 ![modCrossChain desktop preview](./docs/assets/bridge-desktop.png)
 
@@ -40,9 +40,13 @@ The UI stays focused on execution: one centered bridge card, visible fee disclos
 - Compare cheapest, fastest, and best received routes.
 - Auto-fetch quotes after a 500 ms debounce.
 - Show estimated gas, bridge fee, platform fee, receive amount, ETA, and route steps.
+- Score route risk and surface low-liquidity pressure before execution.
 - Execute the selected route through LI.FI with client-side wallet prompts.
 - Track the execution result, transaction hash, copy action, explorer link, and failure retry flow.
 - Persist recent transfer attempts in local browser storage.
+- Support white-label brand copy, colors, and app URLs through env configuration.
+- Include Sentry and GA4 hooks that can be enabled without further code changes.
+- Protect `/api/lifi/*` with rate limiting and short-lived response caches.
 - Link to in-app Terms and Supported Jurisdictions pages.
 
 ## Stack
@@ -56,6 +60,7 @@ The UI stays focused on execution: one centered bridge card, visible fee disclos
 | Bridge Aggregation | LI.FI SDK |
 | State | Zustand |
 | Local persistence | Browser localStorage |
+| Observability | Sentry, GA4-ready client hooks |
 | Hosting | Railway |
 | Product landing | GitHub Pages |
 
@@ -84,6 +89,7 @@ The chain list is centralized and easy to extend through [lib/chains.ts](/Users/
 - Zero and invalid amounts rejected client-side.
 - Slippage applied explicitly to route requests.
 - Integrator fee support can be enabled without changing the custody model.
+- LI.FI API calls can be proxied through Next.js route handlers so the API key remains server-side.
 - Terms and jurisdiction notices are visible from the app entrypoint.
 
 ## Monetization
@@ -140,25 +146,42 @@ Open `http://localhost:3000`.
 
 ```bash
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
+LIFI_API_KEY=
 NEXT_PUBLIC_LIFI_API_KEY=
 NEXT_PUBLIC_LIFI_INTEGRATOR=modCrossChain
 NEXT_PUBLIC_DEFAULT_SLIPPAGE=0.005
 NEXT_PUBLIC_LIFI_FEE=0.0015
 NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD=0.50
+NEXT_PUBLIC_GA_MEASUREMENT_ID=
+NEXT_PUBLIC_SENTRY_DSN=
+NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=0.15
+NEXT_PUBLIC_APP_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_ETHEREUM_RPC_URL=
 NEXT_PUBLIC_BNB_RPC_URL=
 NEXT_PUBLIC_POLYGON_RPC_URL=
 NEXT_PUBLIC_BASE_RPC_URL=
 NEXT_PUBLIC_ARBITRUM_RPC_URL=
 NEXT_PUBLIC_AVALANCHE_RPC_URL=
+NEXT_PUBLIC_BRAND_NAME=modCrossChain
+NEXT_PUBLIC_BRAND_TAGLINE=Non-custodial cross-chain bridge
+NEXT_PUBLIC_BRAND_HEADLINE=Route capital across six networks without leaving the wallet.
+NEXT_PUBLIC_BRAND_SUBHEAD=Live LI.FI quotes, wallet-native execution, visible fees, and faster route selection for real transfer flow.
+NEXT_PUBLIC_BRAND_ACCENT=#ba9eff
+NEXT_PUBLIC_BRAND_SECONDARY=#64f1ff
+NEXT_PUBLIC_PRODUCT_URL=https://wearetheartmakers.github.io/modCrossChain/
+NEXT_PUBLIC_SUPPORT_URL=https://wearetheartmakers.github.io/modCrossChain/
 ```
 
 Operational notes:
 
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is required for WalletConnect support.
-- `NEXT_PUBLIC_LIFI_API_KEY` should be set in production.
-- dedicated RPC endpoints are recommended for production reliability.
+- `LIFI_API_KEY` should be set server-side in production. Do not expose it in `NEXT_PUBLIC_*`.
+- dedicated RPC endpoints are recommended for production reliability and now fall back to public RPCs if any chain is missing.
+- `NEXT_PUBLIC_APP_URL` should match the production domain so wallet metadata is accurate.
 - `NEXT_PUBLIC_LIFI_FEE` is optional but now fully surfaced in the UI.
+- `NEXT_PUBLIC_ENABLE_TEST_WALLET=true` enables the mock connector used by Playwright.
+- `NEXT_PUBLIC_LIFI_API_KEY` is supported only as a migration fallback. Production should prefer `LIFI_API_KEY`.
 
 ## Scripts
 
@@ -176,20 +199,30 @@ npm run start
 railway login
 railway link
 railway variable set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-railway variable set NEXT_PUBLIC_LIFI_API_KEY=your_lifi_api_key
+railway variable set LIFI_API_KEY=your_lifi_api_key
 railway variable set NEXT_PUBLIC_LIFI_FEE=0.0015
 railway variable set NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD=0.50
+railway variable set NEXT_PUBLIC_APP_URL=https://your-domain.example
 railway variable set NIXPACKS_NODE_VERSION=22
 railway up
 ```
 
 `NIXPACKS_NODE_VERSION=22` is pinned so Railway uses a Node version compatible with Next.js 16.
 
+## White-label Presets
+
+Preset files live in [config/presets](/Users/bg/Desktop/modBridge/config/presets):
+
+- [modcrosschain.production.env](/Users/bg/Desktop/modBridge/config/presets/modcrosschain.production.env)
+- [partner-aurora.production.env](/Users/bg/Desktop/modBridge/config/presets/partner-aurora.production.env)
+- [partner-vector.production.env](/Users/bg/Desktop/modBridge/config/presets/partner-vector.production.env)
+
+They are designed for Railway variable imports and partner-specific branding rollouts.
+
 ## Development Priorities
 
-- Sentry and basic product analytics.
-- E2E coverage with wallet mocks, route success, invalid input, and no-route states.
-- Dedicated RPC providers for all supported chains.
-- Route risk scoring and low-liquidity warnings.
+- Sentry DSN, release upload credentials, and analytics IDs in the production environment.
+- Dedicated RPC URLs from a provider such as Alchemy, QuickNode, or Ankr for every supported chain.
+- White-label packs per partner deployment, including brand assets, support URL, and fee policy copy.
 - Token destination override instead of symbol-first resolution.
 - Optional notifications for route completion and failure follow-up.

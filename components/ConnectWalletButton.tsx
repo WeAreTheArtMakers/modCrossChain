@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { walletConnectEnabled } from "@/lib/wagmi";
 import { shortenAddress } from "@/lib/format";
+
+const testWalletEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_WALLET === "true";
 
 export function ConnectWalletButton() {
   const [open, setOpen] = useState(false);
@@ -11,12 +13,28 @@ export function ConnectWalletButton() {
   const { connect, connectors, error, isPending } = useConnect();
   const { disconnect } = useDisconnect();
 
+  useEffect(() => {
+    if (!testWalletEnabled || isConnected || typeof window === "undefined") {
+      return;
+    }
+
+    const autoConnect = new URLSearchParams(window.location.search).get("autoconnect");
+    if (autoConnect !== "mock") {
+      return;
+    }
+
+    const mockConnector = connectors.find((walletConnector) => walletConnector.type === "mock");
+    if (mockConnector) {
+      connect({ connector: mockConnector });
+    }
+  }, [connect, connectors, isConnected]);
+
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="h-11 rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-sm font-semibold text-zinc-100 transition hover:border-[#ba9eff]/60 hover:text-[#e4c6ff]"
+        className="brand-border-hover h-11 rounded-lg border border-zinc-800 bg-zinc-950 px-4 text-sm font-semibold text-zinc-100"
       >
         {isConnected && address ? shortenAddress(address) : "Connect wallet"}
       </button>
@@ -51,7 +69,7 @@ export function ConnectWalletButton() {
                     connect({ connector: walletConnector });
                     setOpen(false);
                   }}
-                  className="h-10 w-full rounded-lg border border-zinc-800 px-3 text-left text-sm font-medium text-zinc-100 transition hover:border-[#ba9eff]/60 hover:text-[#e4c6ff] disabled:cursor-wait disabled:text-zinc-500"
+                  className="brand-border-hover h-10 w-full rounded-lg border border-zinc-800 px-3 text-left text-sm font-medium text-zinc-100 disabled:cursor-wait disabled:text-zinc-500"
                 >
                   {walletConnector.name}
                 </button>

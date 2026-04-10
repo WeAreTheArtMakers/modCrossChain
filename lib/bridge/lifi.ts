@@ -2,19 +2,14 @@ import {
   createConfig as createLifiConfig,
   EVM,
   executeRoute,
-  getRoutes,
-  getToken,
-  getTokens,
   type ExecutionOptions,
+  type LiFiStep,
   type Route,
   type RouteExtended,
-  type RouteOptions,
   type Token,
 } from "@lifi/sdk";
 import { getWalletClient, switchChain } from "wagmi/actions";
-import { parseAmountToUnits } from "@/lib/amounts";
-import { DEFAULT_SLIPPAGE, LIFI_API_KEY, LIFI_INTEGRATOR, OPTIONAL_LIFI_FEE } from "@/lib/env";
-import { getNetRouteValueUsd } from "@/lib/format";
+import { DEFAULT_SLIPPAGE, LIFI_INTEGRATOR } from "@/lib/env";
 import { wagmiConfig } from "@/lib/wagmi";
 import type { RoutePreference } from "@/types/bridge";
 
@@ -45,7 +40,6 @@ export function configureLifi() {
 
   createLifiConfig({
     integrator: LIFI_INTEGRATOR,
-    apiKey: LIFI_API_KEY,
     routeOptions: {
       allowSwitchChain: true,
       maxPriceImpact: 0.3,
@@ -68,132 +62,138 @@ export function configureLifi() {
 }
 
 export async function getSourceTokens(chainId: number, search: string, signal?: AbortSignal) {
-  configureLifi();
+  const query = new URLSearchParams({
+    chainId: String(chainId),
+  });
+  if (search) {
+    query.set("search", search);
+  }
 
-  const response = await getTokens(
-    {
-      chains: [chainId],
-      extended: true,
-      limit: search ? 40 : 80,
-      orderBy: "marketCapUSD",
-      search: search || undefined,
-    },
-    { signal },
-  );
+  const response = await fetch(`/api/lifi/tokens?${query.toString()}`, {
+    method: "GET",
+    signal,
+  });
 
-  return response.tokens[chainId] ?? [];
+  const payload = (await response.json()) as Token[] | { error?: string };
+
+  if (!response.ok || !Array.isArray(payload)) {
+    throw new Error(
+      !Array.isArray(payload) && payload.error ? payload.error : "Could not load supported tokens.",
+    );
+  }
+
+  return payload;
 }
 
 export async function getBestLifiRoute(input: BestRouteInput) {
-  configureLifi();
-
-  const fromAmount = parseAmountToUnits(input.amount, input.fromToken.decimals);
-  if (!fromAmount || fromAmount <= 0n) {
-    throw new Error("Enter an amount greater than zero.");
-  }
-
-  const destinationToken = await resolveDestinationToken(input.fromToken, input.toChainId, input.signal);
-
-  const routeOptions: RouteOptions = {
-    allowSwitchChain: true,
-    fee: OPTIONAL_LIFI_FEE,
-    maxPriceImpact: 0.3,
-    order: toLifiOrder(input.order),
-    slippage: input.slippage,
-  };
-
-  const response = await getRoutes(
-    {
-      fromAddress: input.address,
-      fromAmount: fromAmount.toString(),
+  const response = await fetch("/api/lifi/routes", {
+    body: JSON.stringify({
+      address: input.address,
+      amount: input.amount,
       fromChainId: input.fromChainId,
-      fromTokenAddress: input.fromToken.address,
-      options: routeOptions,
-      toAddress: input.address,
+      fromToken: input.fromToken,
+      order: input.order,
+      slippage: input.slippage,
       toChainId: input.toChainId,
-      toTokenAddress: destinationToken.address,
+    }),
+    headers: {
+      "Content-Type": "application/json",
     },
-    { signal: input.signal },
-  );
+    method: "POST",
+    signal: input.signal,
+  });
 
-  const routes = response.routes ?? [];
-  if (!routes.length) {
-    const reason =
-      response.unavailableRoutes?.filteredOut?.[0]?.reason ??
-      response.unavailableRoutes?.failed?.[0]?.subpaths?.[0]?.[0]?.message ??
-      "No route found for this token, amount, and chain pair.";
-    throw new Error(reason);
+  const payload = (await response.json()) as
+    | {
+        bestRoute: Route;
+        comparisons: RouteComparisons;
+        destinationToken: Token;
+        routes: Route[];
+      }
+    | { error?: string };
+
+  if (!response.ok || !("bestRoute" in payload)) {
+    throw new Error(("error" in payload && payload.error) || "Could not quote a route right now.");
   }
-
-  const comparisons = getRouteComparisons(routes);
 
   return {
-    bestRoute: comparisons[input.order] ?? comparisons.CHEAPEST ?? routes[0],
-    comparisons,
-    destinationToken,
-    routes,
+    bestRoute: payload.bestRoute,
+    comparisons: payload.comparisons,
+    destinationToken: payload.destinationToken,
+    routes: payload.routes,
   };
 }
 
 export async function executeLifiRoute(route: Route, options: ExecutionOptions): Promise<RouteExtended> {
   configureLifi();
+
+  if (process.env.NEXT_PUBLIC_ENABLE_TEST_WALLET === "true" && route.id.startsWith("mock-")) {
+    return simulateMockExecution(route, options);
+  }
+
   return executeRoute(route, {
     ...options,
     executeInBackground: false,
   });
 }
 
-async function resolveDestinationToken(fromToken: Token, toChainId: number, signal?: AbortSignal) {
-  const lookupKeys = [fromToken.coinKey, fromToken.symbol].filter(Boolean) as string[];
-
-  for (const lookupKey of lookupKeys) {
-    try {
-      const token = await getToken(toChainId, lookupKey, { signal });
-      if (token?.address && token.symbol.toLowerCase() === fromToken.symbol.toLowerCase()) {
-        return token;
-      }
-    } catch {
-      // Fall back to token search below when LI.FI cannot resolve a symbol directly.
-    }
-  }
-
-  const response = await getTokens(
-    {
-      chains: [toChainId],
-      extended: true,
-      limit: 25,
-      search: fromToken.symbol,
-    },
-    { signal },
-  );
-
-  const destinationToken = response.tokens[toChainId]?.find(
-    (token) => token.symbol.toLowerCase() === fromToken.symbol.toLowerCase(),
-  );
-
-  if (!destinationToken) {
-    throw new Error(`${fromToken.symbol} is not supported on the destination chain.`);
-  }
-
-  return destinationToken;
-}
-
-function getRouteComparisons(routes: Route[]): RouteComparisons {
-  return {
-    BEST_RECEIVED: [...routes].sort((left, right) => Number(right.toAmountUSD) - Number(left.toAmountUSD))[0],
-    CHEAPEST: [...routes].sort((left, right) => getNetRouteValueUsd(right) - getNetRouteValueUsd(left))[0],
-    FASTEST: [...routes].sort((left, right) => getRouteDuration(left) - getRouteDuration(right))[0],
+async function simulateMockExecution(route: Route, options: ExecutionOptions): Promise<RouteExtended> {
+  const mockTx = {
+    txHash: "0xmockbridge00000000000000000000000000000000000000000000000000000001",
+    txLink: "https://example.com/mock-tx",
   };
-}
+  const pendingRoute = createMockExecutionRoute(route, "PENDING", "Bridge queued", {
+    txHash: mockTx.txHash,
+    txLink: mockTx.txLink,
+  });
+  options.updateRouteHook?.(pendingRoute);
+  await delay(250);
 
-function getRouteDuration(route: Route) {
-  return route.steps.reduce((total, step) => total + (step.estimate?.executionDuration ?? 0), 0);
-}
-
-function toLifiOrder(order: RoutePreference): RouteOptions["order"] {
-  if (order === "FASTEST") {
-    return "FASTEST";
+  if (route.id.includes("failure")) {
+    const failedRoute = createMockExecutionRoute(route, "FAILED", "Mock bridge failed for test coverage.");
+    options.updateRouteHook?.(failedRoute);
+    throw new Error("Mock execution failed.");
   }
 
-  return "CHEAPEST";
+  const completeRoute = createMockExecutionRoute(route, "DONE", "Mock bridge completed.", mockTx);
+  options.updateRouteHook?.(completeRoute);
+  return completeRoute;
+}
+
+function createMockExecutionRoute(
+  route: Route,
+  status: "PENDING" | "FAILED" | "DONE",
+  message: string,
+  tx?: { txHash: string; txLink: string },
+) {
+  const step = route.steps[0] as LiFiStep | undefined;
+
+  return {
+    ...route,
+    steps: route.steps.map((currentStep, index) => ({
+      ...(currentStep as LiFiStep),
+      execution:
+        index === 0
+          ? {
+              process: [
+                {
+                  chainId: route.fromChainId,
+                  message,
+                  startedAt: Date.now(),
+                  status,
+                  txHash: tx?.txHash,
+                  txLink: tx?.txLink,
+                  type: step?.action.fromChainId !== step?.action.toChainId ? "CROSS_CHAIN" : "SWAP",
+                },
+              ],
+              startedAt: Date.now(),
+              status: status === "DONE" ? "DONE" : status === "FAILED" ? "FAILED" : "PENDING",
+            }
+          : undefined,
+    })),
+  } satisfies RouteExtended;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }

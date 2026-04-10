@@ -12,7 +12,7 @@ export function AmountInput({ amount, symbol, onAmountChange }: AmountInputProps
       <span className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
         Amount
       </span>
-      <div className="flex min-h-16 items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-950/80 px-4 transition focus-within:border-[#ba9eff]/70">
+      <div className="brand-border-hover flex min-h-16 items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-950/80 px-4 focus-within:border-[rgb(var(--brand-accent-rgb)/0.7)]">
         <input
           value={amount}
           onChange={(event) => onAmountChange(sanitizeAmount(event.target.value))}

@@ -13,6 +13,7 @@ import {
   getRoutePreview,
 } from "@/lib/format";
 import { MIN_PLATFORM_FEE_NOTICE_USD, OPTIONAL_LIFI_FEE } from "@/lib/env";
+import { analyzeRouteRisk } from "@/lib/route-risk";
 import type { RoutePreference } from "@/types/bridge";
 
 type RouteInfoPanelProps = {
@@ -68,6 +69,7 @@ export function RouteInfoPanel({
   const platformFeeUsd = route ? getPlatformFeeUsd(route, OPTIONAL_LIFI_FEE) : 0;
   const feeFallsBelowMinimumNotice =
     OPTIONAL_LIFI_FEE && platformFeeUsd > 0 && platformFeeUsd < MIN_PLATFORM_FEE_NOTICE_USD;
+  const routeRisk = analyzeRouteRisk(route);
 
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-950/70 p-4">
@@ -84,9 +86,16 @@ export function RouteInfoPanel({
                 disabled={!option}
                 className={`rounded-lg border p-3 text-left transition ${
                   routePreference === preference
-                    ? "border-[#ba9eff]/60 bg-[#ba9eff]/10"
+                    ? "bg-[rgb(var(--brand-accent-rgb)/0.10)]"
                     : "border-zinc-800 bg-black/20 hover:border-zinc-700"
                 } disabled:cursor-not-allowed disabled:opacity-50`}
+                style={
+                  routePreference === preference
+                    ? {
+                        borderColor: "rgb(var(--brand-accent-rgb) / 0.6)",
+                      }
+                    : undefined
+                }
               >
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
                   {getPreferenceLabel(preference)}
@@ -112,7 +121,7 @@ export function RouteInfoPanel({
         </div>
         <div className="text-right">
           <p className="text-xs text-zinc-500">Receive</p>
-          <p className="mt-1 text-sm font-semibold text-[#e4c6ff]">
+          <p className="mt-1 text-sm font-semibold text-[rgb(var(--brand-accent-rgb))]">
             {formatTokenAmount(route.toAmount, route.toToken.decimals)} {destinationToken?.symbol ?? route.toToken.symbol}
           </p>
         </div>
@@ -139,6 +148,33 @@ export function RouteInfoPanel({
         </div>
       </dl>
 
+      <div className="mt-3 rounded-lg border border-zinc-800 bg-black/20 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">Route risk</p>
+            <p className="mt-1 text-sm font-semibold text-white">
+              {routeRisk.level === "LOW" ? "Standard execution" : routeRisk.level === "MEDIUM" ? "Review before signing" : "Elevated attention required"}
+            </p>
+          </div>
+          <span className={getRiskBadgeClass(routeRisk.level)}>{routeRisk.level}</span>
+        </div>
+
+        {routeRisk.warnings.length ? (
+          <div className="mt-3 space-y-2">
+            {routeRisk.warnings.map((warning) => (
+              <div key={warning.code} className="rounded-md border border-white/6 bg-white/[0.02] px-3 py-2">
+                <p className="text-sm font-medium text-zinc-100">{warning.title}</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-400">{warning.detail}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-xs leading-5 text-zinc-400">
+            Minimum received is close to the live quote, the fee share stays controlled, and execution path complexity is limited.
+          </p>
+        )}
+      </div>
+
       <div className="mt-3 space-y-2 text-xs leading-5">
         <p className="rounded-md border border-zinc-800 bg-black/20 px-3 py-2 text-zinc-400">
           {OPTIONAL_LIFI_FEE
@@ -152,6 +188,13 @@ export function RouteInfoPanel({
           <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-100">
             This quote falls below the small-transfer fee target. The app still preserves a non-custodial flow and
             does not add a separate fixed surcharge.
+          </p>
+        ) : null}
+
+        {routeRisk.liquidityGap >= 0.008 ? (
+          <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-100">
+            Low-liquidity buffer detected. Minimum received is {formatPercent(routeRisk.liquidityGap, 2)} below the
+            current quote.
           </p>
         ) : null}
 
@@ -190,4 +233,17 @@ function getPreferenceLabel(preference: RoutePreference) {
     default:
       return "Cheapest";
   }
+}
+
+function getRiskBadgeClass(level: "LOW" | "MEDIUM" | "HIGH") {
+  const base = "rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]";
+  if (level === "HIGH") {
+    return `${base} bg-red-400/15 text-red-200`;
+  }
+
+  if (level === "MEDIUM") {
+    return `${base} bg-amber-400/15 text-amber-100`;
+  }
+
+  return `${base} bg-emerald-400/15 text-emerald-100`;
 }
