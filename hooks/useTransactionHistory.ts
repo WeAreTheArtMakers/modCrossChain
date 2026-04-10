@@ -1,25 +1,34 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { TransactionHistoryItem } from "@/types/bridge";
 
 const STORAGE_KEY = "modCrossChain.transactionHistory";
 const MAX_HISTORY_ITEMS = 8;
-const subscribers = new Set<() => void>();
 
 export function useTransactionHistory() {
-  const items = useSyncExternalStore(subscribe, readHistory, () => []);
+  const [items, setItems] = useState<TransactionHistoryItem[]>(() => readHistory());
+
+  useEffect(() => {
+    function handleStorage() {
+      setItems(readHistory());
+    }
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const pushHistoryItem = useCallback((item: TransactionHistoryItem) => {
-    const current = readHistory();
-    const next = [item, ...current.filter((entry) => entry.id !== item.id)].slice(0, MAX_HISTORY_ITEMS);
-    writeHistory(next);
-    emitChange();
+    setItems((current) => {
+      const next = [item, ...current.filter((entry) => entry.id !== item.id)].slice(0, MAX_HISTORY_ITEMS);
+      writeHistory(next);
+      return next;
+    });
   }, []);
 
   const clearHistory = useCallback(() => {
     writeHistory([]);
-    emitChange();
+    setItems([]);
   }, []);
 
   return {
@@ -27,28 +36,6 @@ export function useTransactionHistory() {
     items,
     pushHistoryItem,
   };
-}
-
-function subscribe(callback: () => void) {
-  subscribers.add(callback);
-
-  if (typeof window !== "undefined") {
-    window.addEventListener("storage", callback);
-  }
-
-  return () => {
-    subscribers.delete(callback);
-
-    if (typeof window !== "undefined") {
-      window.removeEventListener("storage", callback);
-    }
-  };
-}
-
-function emitChange() {
-  for (const callback of subscribers) {
-    callback();
-  }
 }
 
 function readHistory(): TransactionHistoryItem[] {
