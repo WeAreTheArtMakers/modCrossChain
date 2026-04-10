@@ -14,6 +14,7 @@ import {
 import { getWalletClient, switchChain } from "wagmi/actions";
 import { parseAmountToUnits } from "@/lib/amounts";
 import { DEFAULT_SLIPPAGE, LIFI_API_KEY, LIFI_INTEGRATOR, OPTIONAL_LIFI_FEE } from "@/lib/env";
+import { getNetRouteValueUsd } from "@/lib/format";
 import { wagmiConfig } from "@/lib/wagmi";
 import type { RoutePreference } from "@/types/bridge";
 
@@ -33,6 +34,8 @@ type BestRouteInput = {
   slippage: number;
   toChainId: number;
 };
+
+type RouteComparisons = Record<RoutePreference, Route | undefined>;
 
 export function configureLifi() {
   const globalForLifi = globalThis as LifiGlobal;
@@ -95,7 +98,7 @@ export async function getBestLifiRoute(input: BestRouteInput) {
     allowSwitchChain: true,
     fee: OPTIONAL_LIFI_FEE,
     maxPriceImpact: 0.3,
-    order: input.order,
+    order: toLifiOrder(input.order),
     slippage: input.slippage,
   };
 
@@ -122,8 +125,11 @@ export async function getBestLifiRoute(input: BestRouteInput) {
     throw new Error(reason);
   }
 
+  const comparisons = getRouteComparisons(routes);
+
   return {
-    bestRoute: chooseBestRoute(routes, input.order),
+    bestRoute: comparisons[input.order] ?? comparisons.CHEAPEST ?? routes[0],
+    comparisons,
     destinationToken,
     routes,
   };
@@ -172,14 +178,22 @@ async function resolveDestinationToken(fromToken: Token, toChainId: number, sign
   return destinationToken;
 }
 
-function chooseBestRoute(routes: Route[], order: RoutePreference) {
-  if (order === "FASTEST") {
-    return [...routes].sort((left, right) => getRouteDuration(left) - getRouteDuration(right))[0];
-  }
-
-  return [...routes].sort((left, right) => Number(right.toAmountUSD) - Number(left.toAmountUSD))[0];
+function getRouteComparisons(routes: Route[]): RouteComparisons {
+  return {
+    BEST_RECEIVED: [...routes].sort((left, right) => Number(right.toAmountUSD) - Number(left.toAmountUSD))[0],
+    CHEAPEST: [...routes].sort((left, right) => getNetRouteValueUsd(right) - getNetRouteValueUsd(left))[0],
+    FASTEST: [...routes].sort((left, right) => getRouteDuration(left) - getRouteDuration(right))[0],
+  };
 }
 
 function getRouteDuration(route: Route) {
   return route.steps.reduce((total, step) => total + (step.estimate?.executionDuration ?? 0), 0);
+}
+
+function toLifiOrder(order: RoutePreference): RouteOptions["order"] {
+  if (order === "FASTEST") {
+    return "FASTEST";
+  }
+
+  return "CHEAPEST";
 }

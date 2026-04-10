@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { getRoutePreview } from "@/lib/format";
 import { getExecutionProcesses } from "@/lib/transactions";
 import type { BridgeExecutionState } from "@/types/bridge";
@@ -7,10 +8,18 @@ import type { BridgeExecutionState } from "@/types/bridge";
 type TransactionStatusModalProps = {
   execution: BridgeExecutionState;
   onClose: () => void;
+  onRetry: () => void | Promise<void>;
   open: boolean;
 };
 
-export default function TransactionStatusModal({ execution, onClose, open }: TransactionStatusModalProps) {
+export default function TransactionStatusModal({
+  execution,
+  onClose,
+  onRetry,
+  open,
+}: TransactionStatusModalProps) {
+  const [copied, setCopied] = useState(false);
+
   if (!open) return null;
 
   const processes = execution.route ? getExecutionProcesses(execution.route) : [];
@@ -72,18 +81,51 @@ export default function TransactionStatusModal({ execution, onClose, open }: Tra
           <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950/70 p-3">
             <p className="text-xs text-zinc-500">Transaction hash</p>
             <p className="mt-1 break-all text-sm text-zinc-100">{execution.txHash}</p>
-            {execution.txLink ? (
-              <a
-                href={execution.txLink}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 inline-flex h-9 items-center rounded-lg bg-[#ba9eff] px-3 text-sm font-semibold text-zinc-950 transition hover:bg-[#c8b5ff]"
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!execution.txHash) return;
+                  await navigator.clipboard.writeText(execution.txHash);
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1500);
+                }}
+                className="inline-flex h-9 items-center rounded-lg border border-zinc-800 px-3 text-sm font-semibold text-zinc-100 transition hover:border-[#ba9eff]/60 hover:text-[#e4c6ff]"
               >
-                Open explorer
-              </a>
-            ) : null}
+                {copied ? "Copied" : "Copy hash"}
+              </button>
+              {execution.txLink ? (
+                <a
+                  href={execution.txLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center rounded-lg bg-[#ba9eff] px-3 text-sm font-semibold text-zinc-950 transition hover:bg-[#c8b5ff]"
+                >
+                  Open explorer
+                </a>
+              ) : null}
+            </div>
           </div>
         ) : null}
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {execution.phase === "failed" ? (
+            <button
+              type="button"
+              onClick={() => void onRetry()}
+              className="inline-flex h-10 items-center rounded-lg bg-[#ba9eff] px-3 text-sm font-semibold text-zinc-950 transition hover:bg-[#c8b5ff]"
+            >
+              Refresh quote and retry
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 items-center rounded-lg border border-zinc-800 px-3 text-sm font-semibold text-zinc-200 transition hover:border-zinc-700 hover:text-white"
+          >
+            {execution.phase === "success" ? "Bridge another" : "Close"}
+          </button>
+        </div>
       </div>
     </div>
   );

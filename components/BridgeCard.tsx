@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import type { Route } from "@lifi/sdk";
 import { isAddress, type Address } from "viem";
 import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi";
 import { AmountInput } from "@/components/AmountInput";
@@ -8,20 +10,20 @@ import { BridgePath } from "@/components/BridgePath";
 import { ChainSelect } from "@/components/ChainSelect";
 import { RouteInfoPanel } from "@/components/RouteInfoPanel";
 import { TokenSelector } from "@/components/TokenSelector";
+import { TransactionHistoryPanel } from "@/components/TransactionHistoryPanel";
 import { executeLifiRoute } from "@/lib/bridge/lifi";
-import {
-  getChainName,
-  isSupportedChainId,
-} from "@/lib/chains";
+import { getChainName, isSupportedChainId } from "@/lib/chains";
 import { DEFAULT_SLIPPAGE } from "@/lib/env";
 import { toHumanBridgeError } from "@/lib/errors";
-import { parseTokenAmount } from "@/lib/format";
+import { formatTokenAmount, getRoutePreview, parseTokenAmount } from "@/lib/format";
 import { useBridgeStore } from "@/lib/store";
 import { extractTransactionProgress } from "@/lib/transactions";
 import { useBestRoute } from "@/hooks/useBestRoute";
-import type { BridgeExecutionState } from "@/types/bridge";
+import { useTransactionHistory } from "@/hooks/useTransactionHistory";
+import type { BridgeExecutionState, RoutePreference, TransactionHistoryItem } from "@/types/bridge";
 
 const TransactionStatusModal = lazy(() => import("@/components/TransactionStatusModal"));
+const ROUTE_PREFERENCES: RoutePreference[] = ["CHEAPEST", "FASTEST", "BEST_RECEIVED"];
 
 export function BridgeCard() {
   const { address, isConnected } = useAccount();
@@ -30,7 +32,6 @@ export function BridgeCard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [execution, setExecution] = useState<BridgeExecutionState>({
     phase: "idle",
-    updatedAt: Date.now(),
   });
 
   const {
@@ -47,6 +48,7 @@ export function BridgeCard() {
     slippage,
     toChainId,
   } = useBridgeStore();
+  const { clearHistory, items: transactionHistory, pushHistoryItem } = useTransactionHistory();
 
   useEffect(() => {
     if (isConnected && isSupportedChainId(currentChainId)) {
@@ -119,23 +121,29 @@ export function BridgeCard() {
     fromChainId,
   });
 
-  async function handleBridge() {
-    if (!isConnected || !address || !bestRoute || validationError) {
+  async function executeBridge(routeToExecute: Route) {
+    if (!isConnected || !address || !routeToExecute || validationError) {
       return;
     }
 
     setModalOpen(true);
-    setExecution({ phase: "waiting_wallet", route: bestRoute, updatedAt: Date.now() });
+    setExecution({
+      error: undefined,
+      phase: "waiting_wallet",
+      route: routeToExecute,
+      txHash: undefined,
+      txLink: undefined,
+    });
 
     try {
       if (currentChainId !== fromChainId) {
-        setExecution({ phase: "switching_network", route: bestRoute, updatedAt: Date.now() });
+        setExecution({ phase: "switching_network", route: routeToExecute });
         await switchChainAsync({ chainId: fromChainId });
       }
 
-      setExecution({ phase: "executing", route: bestRoute, updatedAt: Date.now() });
+      setExecution({ phase: "executing", route: routeToExecute });
 
-      const executedRoute = await executeLifiRoute(bestRoute, {
+      const executedRoute = await executeLifiRoute(routeToExecute, {
         updateRouteHook(updatedRoute) {
           const progress = extractTransactionProgress(updatedRoute);
           setExecution({
@@ -143,7 +151,6 @@ export function BridgeCard() {
             route: updatedRoute,
             txHash: progress.txHash,
             txLink: progress.txLink,
-            updatedAt: Date.now(),
           });
         },
         async acceptExchangeRateUpdateHook({ oldToAmount, newToAmount, toToken }) {
@@ -159,16 +166,87 @@ export function BridgeCard() {
         route: executedRoute,
         txHash: progress.txHash,
         txLink: progress.txLink,
-        updatedAt: Date.now(),
       });
+      pushHistoryItem(createHistoryItem({ route: executedRoute, status: "SUCCESS", txHash: progress.txHash, txLink: progress.txLink }));
     } catch (error) {
+      const humanError = toHumanBridgeError(error);
       setExecution((current) => ({
         ...current,
         phase: "failed",
-        error: toHumanBridgeError(error),
-        updatedAt: Date.now(),
+        error: humanError,
       }));
+      pushHistoryItem(
+        createHistoryItem({
+          error: humanError,
+          route: routeToExecute,
+          status: "FAILED",
+        }),
+      );
     }
+  }
+
+  async function handleBridge() {
+    if (!bestRoute) {
+      return;
+    }
+
+    await executeBridge(bestRoute);
+  }
+
+  async function handleRetry() {
+    if (!address || validationError) {
+      return;
+    }
+
+    setExecution((current) => ({
+      ...current,
+      error: undefined,
+      phase: "executing",
+    }));
+
+    const refreshed = await routeQuery.refetch();
+    const refreshedRoute = refreshed.data?.bestRoute;
+
+    if (!refreshedRoute) {
+      setExecution((current) => ({
+        ...current,
+        error: "Could not refresh the route. Review the quote and try again.",
+        phase: "failed",
+      }));
+      return;
+    }
+
+    await executeBridge(refreshedRoute);
+  }
+
+  function createHistoryItem({
+    error,
+    route,
+    status,
+    txHash,
+    txLink,
+  }: {
+    error?: string;
+    route?: Route;
+    status: TransactionHistoryItem["status"];
+    txHash?: string;
+    txLink?: string;
+  }): TransactionHistoryItem {
+    return {
+      createdAt: Date.now(),
+      error,
+      fromAmount: route ? `${formatTokenAmount(route.fromAmount, route.fromToken.decimals)} ${route.fromToken.symbol}` : amount,
+      fromChainId,
+      fromSymbol: route?.fromToken.symbol ?? selectedToken?.symbol ?? "Token",
+      id: `${Date.now()}-${status}-${txHash ?? Math.random().toString(36).slice(2, 8)}`,
+      routePreview: route ? getRoutePreview(route) : "LI.FI route",
+      status,
+      toAmount: route ? `${formatTokenAmount(route.toAmount, route.toToken.decimals)} ${route.toToken.symbol}` : undefined,
+      toChainId,
+      toSymbol: route?.toToken.symbol ?? routeQuery.data?.destinationToken?.symbol ?? selectedToken?.symbol ?? "Token",
+      txHash,
+      txLink,
+    };
   }
 
   return (
@@ -177,7 +255,7 @@ export function BridgeCard() {
         <div className="mb-4 flex items-start justify-between gap-4 px-1 pt-1">
           <div>
             <h2 className="text-xl font-semibold text-white">Bridge</h2>
-            <p className="mt-1 text-sm text-zinc-500">Ethereum, BNB Chain, and Polygon</p>
+            <p className="mt-1 text-sm text-zinc-500">Ethereum, BNB Chain, Polygon, Base, Arbitrum, Avalanche</p>
           </div>
           <div className="rounded-md border border-[#ba9eff]/25 bg-[#ba9eff]/10 px-2 py-1 text-xs font-medium text-[#e4c6ff]">
             LI.FI
@@ -208,19 +286,27 @@ export function BridgeCard() {
 
           <AmountInput amount={amount} onAmountChange={setAmount} symbol={selectedToken?.symbol} />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.7fr_1fr]">
             <label className="block">
               <span className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
                 Route
               </span>
-              <select
-                value={routePreference}
-                onChange={(event) => setRoutePreference(event.target.value as "CHEAPEST" | "FASTEST")}
-                className="h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none transition focus:border-[#ba9eff]/70"
-              >
-                <option value="CHEAPEST">Cheapest</option>
-                <option value="FASTEST">Fastest</option>
-              </select>
+              <div className="grid grid-cols-3 gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 p-2">
+                {ROUTE_PREFERENCES.map((preference) => (
+                  <button
+                    key={preference}
+                    type="button"
+                    onClick={() => setRoutePreference(preference)}
+                    className={`min-h-11 rounded-md px-2 text-xs font-semibold transition ${
+                      routePreference === preference
+                        ? "bg-[#ba9eff] text-zinc-950"
+                        : "border border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-[#ba9eff]/60 hover:text-[#e4c6ff]"
+                    }`}
+                  >
+                    {getRoutePreferenceLabel(preference)}
+                  </button>
+                ))}
+              </div>
             </label>
 
             <label className="block">
@@ -241,9 +327,12 @@ export function BridgeCard() {
           </div>
 
           <RouteInfoPanel
+            comparisons={routeQuery.data?.comparisons}
             destinationToken={routeQuery.data?.destinationToken}
             error={validationError ?? routeError}
             isLoading={routeQuery.isFetching}
+            onSelectPreference={setRoutePreference}
+            routePreference={routePreference}
             route={bestRoute}
           />
 
@@ -262,12 +351,31 @@ export function BridgeCard() {
           >
             {buttonLabel}
           </button>
+
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-3 text-xs leading-5 text-zinc-500">
+            Non-custodial execution only. Review the fee disclosure before bridging. See{" "}
+            <Link href="/terms" className="font-medium text-zinc-300 transition hover:text-white">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/jurisdictions" className="font-medium text-zinc-300 transition hover:text-white">
+              Supported Jurisdictions
+            </Link>
+            .
+          </div>
+
+          <TransactionHistoryPanel items={transactionHistory} onClear={clearHistory} />
         </div>
       </div>
 
       {modalOpen ? (
         <Suspense fallback={null}>
-          <TransactionStatusModal execution={execution} onClose={() => setModalOpen(false)} open={modalOpen} />
+          <TransactionStatusModal
+            execution={execution}
+            onClose={() => setModalOpen(false)}
+            onRetry={handleRetry}
+            open={modalOpen}
+          />
         </Suspense>
       ) : null}
     </>
@@ -324,4 +432,12 @@ function getButtonLabel({
   if (isFetchingRoute) return "Finding best route";
   if (!canBridge) return "Bridge unavailable";
   return "Bridge Now";
+}
+
+function getRoutePreferenceLabel(value: RoutePreference) {
+  if (value === "BEST_RECEIVED") {
+    return "Best received";
+  }
+
+  return value.charAt(0) + value.slice(1).toLowerCase();
 }

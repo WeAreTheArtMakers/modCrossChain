@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>modCrossChain | Terms</title>
+    <meta
+      name="description"
+      content="Draft operational terms for the modCrossChain non-custodial bridge interface."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="content-shell">
+      <a class="back-link" href="./">← Back to modCrossChain</a>
+
+      <div class="prose">
+        <p class="section-title">Draft Terms</p>
+        <h1>Terms of Use</h1>
+        <p>
+          This draft is designed for a non-custodial bridge interface that routes through LI.FI. It
+          should be reviewed by counsel before production launch.
+        </p>
+
+        <h2>1. Non-custodial service</h2>
+        <p>
+          modCrossChain is a frontend interface. It does not take custody of user assets, does not
+          store private keys, and does not operate a custom bridge protocol. All blockchain
+          interactions are initiated and signed by the connected wallet.
+        </p>
+
+        <h2>2. Aggregator routing</h2>
+        <p>
+          Routes are sourced from third-party infrastructure, including LI.FI and the underlying
+          bridges or DEX protocols selected by the route. Availability, timing, pricing, and
+          execution quality may change without notice.
+        </p>
+
+        <h2>3. Fees and disclosure</h2>
+        <p>
+          The interface may include a disclosed LI.FI integrator fee. Gas costs, bridge fees, and
+          platform fees are shown in the route panel before execution. Any small-transfer minimum fee
+          policy is presented as a disclosure target only unless the execution path explicitly
+          supports it without changing the custody model.
+        </p>
+
+        <h2>4. User responsibilities</h2>
+        <p>
+          Users are responsible for verifying token, amount, route, destination chain, wallet
+          prompts, and supported jurisdictions before confirming a transaction. Blockchain
+          transactions are generally irreversible.
+        </p>
+
+        <h2>5. Restricted use</h2>
+        <p>
+          The operator may block or refuse access where sanctions, embargoes, licensing
+          requirements, or local prohibitions make the service unavailable. See the
+          <a href="./jurisdictions.html"> Supported Jurisdictions </a>
+          page for operational restrictions.
+        </p>
+
+        <h2>6. No legal or tax advice</h2>
+        <p>
+          The interface and its documentation are operational materials only. They are not legal,
+          compliance, tax, investment, or accounting advice.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

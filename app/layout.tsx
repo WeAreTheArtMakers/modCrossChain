@@ -10,7 +10,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "modCrossChain Bridge",
-  description: "Bridge tokens across Ethereum, BNB Chain, and Polygon with LI.FI routing.",
+  description: "Bridge tokens across Ethereum, BNB Chain, Polygon, Base, Arbitrum, and Avalanche with LI.FI routing.",
   icons: {
     icon: "/brand/modcrosschain-mark.svg",
     shortcut: "/brand/modcrosschain-mark.svg",

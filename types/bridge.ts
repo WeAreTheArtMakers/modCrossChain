@@ -1,6 +1,6 @@
 import type { RouteExtended } from "@lifi/sdk";
 
-export type RoutePreference = "CHEAPEST" | "FASTEST";
+export type RoutePreference = "CHEAPEST" | "FASTEST" | "BEST_RECEIVED";
 
 export type BridgeExecutionPhase =
   | "idle"
@@ -16,5 +16,22 @@ export type BridgeExecutionState = {
   route?: RouteExtended;
   txHash?: string;
   txLink?: string;
-  updatedAt: number;
+};
+
+export type TransactionHistoryStatus = "SUCCESS" | "FAILED";
+
+export type TransactionHistoryItem = {
+  createdAt: number;
+  error?: string;
+  fromAmount: string;
+  fromChainId: number;
+  fromSymbol: string;
+  id: string;
+  routePreview: string;
+  status: TransactionHistoryStatus;
+  toAmount?: string;
+  toChainId: number;
+  toSymbol: string;
+  txHash?: string;
+  txLink?: string;
 };

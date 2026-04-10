@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>modCrossChain | Cross-chain bridge landing page</title>
+    <title>modCrossChain | Cross-chain bridge</title>
     <meta
       name="description"
       content="modCrossChain is a non-custodial cross-chain bridge UI powered by LI.FI, built with Next.js, wagmi, viem, TailwindCSS, and Railway."
@@ -19,8 +19,10 @@
         <nav>
           <a class="nav-link" href="#features">Features</a>
           <a class="nav-link" href="#stack">Stack</a>
+          <a class="nav-link" href="#monetization">Monetization</a>
           <a class="nav-link" href="#security">Security</a>
           <a class="nav-link" href="#launch">Launch</a>
+          <a class="nav-link" href="./terms.html">Terms</a>
         </nav>
       </header>
 
@@ -30,8 +32,8 @@
           <h1>Bridge assets across chains without building a bridge protocol.</h1>
           <p>
             modCrossChain is a clean, dark, non-custodial bridge interface for Ethereum, BNB Chain,
-            and Polygon. It requests the best route from LI.FI, sends transactions through the
-            user&apos;s wallet, and keeps private keys entirely client-side.
+            Polygon, Base, Arbitrum, and Avalanche. It requests the best route from LI.FI, sends
+            transactions through the user&apos;s wallet, and keeps private keys entirely client-side.
           </p>
           <div class="cta-row">
             <a class="button primary" href="https://modcrosschain-production.up.railway.app" target="_blank" rel="noreferrer">Launch Live App</a>
@@ -39,7 +41,7 @@
           </div>
           <div class="stat-row">
             <div class="stat">
-              <strong>3</strong>
+              <strong>6</strong>
               <span>Supported chains</span>
             </div>
             <div class="stat">
@@ -47,8 +49,8 @@
               <span>Wallet execution</span>
             </div>
             <div class="stat">
-              <strong>Optional fee</strong>
-              <span>Integrator monetization</span>
+              <strong>0.15%</strong>
+              <span>Starter integrator fee</span>
             </div>
           </div>
         </div>
@@ -93,15 +95,15 @@
         <div class="grid-3">
           <article class="card">
             <h3>Route intelligence</h3>
-            <p>Fetches cheapest or fastest routes with LI.FI and shows gas cost, bridge fee, receive amount, and ETA.</p>
+            <p>Compares cheapest, fastest, and best received routes with visible gas, bridge fee, and platform fee disclosure.</p>
           </article>
           <article class="card">
             <h3>Wallet-native flow</h3>
             <p>All signing happens in the connected wallet. No custom custody, no private key handling, no backend signer.</p>
           </article>
           <article class="card">
-            <h3>Deployment-ready</h3>
-            <p>Prepared for Railway deployment, GitHub publishing, WalletConnect configuration, and integrator fee monetization.</p>
+            <h3>Retention-ready</h3>
+            <p>Includes local transaction history, copy-hash actions, retry-friendly failure states, and explorer links.</p>
           </article>
         </div>
       </section>
@@ -118,7 +120,7 @@
           <article class="card">
             <span class="step">02</span>
             <h3>Request the best route</h3>
-            <p>LI.FI resolves the cheapest or fastest route for the selected token, amount, and destination.</p>
+            <p>LI.FI resolves the cheapest, fastest, and best received route candidates for the selected token and destination.</p>
           </article>
           <article class="card">
             <span class="step">03</span>
@@ -147,11 +149,11 @@
       <section class="section two-col">
         <article class="card">
           <p class="section-title">Supported Networks</p>
-          <h3>Ethereum, BNB Chain, Polygon</h3>
+          <h3>Ethereum, BNB Chain, Polygon, Base, Arbitrum, Avalanche</h3>
           <ul>
             <li>Configurable chain list for future expansion.</li>
             <li>Source and destination routes resolved through LI.FI.</li>
-            <li>Destination token lookup keeps the UI simple for same-symbol bridging flows.</li>
+            <li>Dedicated RPC endpoints can be layered in per chain for production stability.</li>
           </ul>
         </article>
 
@@ -162,7 +164,31 @@
             <li>Client-side execution only.</li>
             <li>Private keys never leave the wallet.</li>
             <li>Token address validation and zero-amount rejection before route requests.</li>
-            <li>Optional LI.FI integrator fee support without changing custody model.</li>
+            <li>Integrator fee disclosure without changing custody model.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section id="monetization" class="section two-col">
+        <article class="card">
+          <p class="section-title">Monetization</p>
+          <h3>Per-transfer revenue with fee transparency</h3>
+          <ul>
+            <li>Suggested starter LI.FI fee: 0.10% to 0.35%.</li>
+            <li>Current product recommendation: 0.15%.</li>
+            <li>Small-transfer minimum fee is disclosed clearly without breaking non-custodial execution.</li>
+            <li>Fee visibility is built directly into the route panel.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <p class="section-title">Expansion</p>
+          <h3>Second revenue layers</h3>
+          <ul>
+            <li>Premium route analytics.</li>
+            <li>White-label bridge deployments for partners.</li>
+            <li>Affiliate and referral routing campaigns.</li>
+            <li>API or key-backed pro dashboard.</li>
           </ul>
         </article>
       </section>
@@ -182,16 +208,24 @@
       </section>
 
       <section class="section">
-        <p class="section-title">Business Model</p>
-        <h2>Prepared for per-transfer revenue without becoming custodial.</h2>
+        <p class="section-title">Operations</p>
+        <h2>Compliance text and operating guidance are included in the release.</h2>
         <p class="section-copy">
-          The live app can use LI.FI integrator fees, add premium route analytics, and later layer
-          wallet intelligence, transaction history, and alerting without taking custody of assets.
+          The release now includes draft Terms and Supported Jurisdictions pages for both the live
+          app and GitHub Pages. They should be reviewed by counsel before broader launch.
         </p>
+        <div class="cta-row">
+          <a class="button secondary" href="./terms.html">Read Terms</a>
+          <a class="button secondary" href="./jurisdictions.html">Read Jurisdictions</a>
+        </div>
       </section>
 
       <footer class="footer">
-        modCrossChain. Built for wallet-native cross-chain execution with an aggregator-first approach.
+        <div>modCrossChain. Built for wallet-native cross-chain execution with an aggregator-first approach.</div>
+        <div class="footer-links">
+          <a href="./terms.html">Terms</a>
+          <a href="./jurisdictions.html">Supported Jurisdictions</a>
+        </div>
       </footer>
     </div>
   </body>

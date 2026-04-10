@@ -1,4 +1,4 @@
-import { bsc, mainnet, polygon } from "viem/chains";
+import { arbitrum, avalanche, base, bsc, mainnet, polygon } from "viem/chains";
 
 export type SupportedChain = {
   id: number;
@@ -8,7 +8,7 @@ export type SupportedChain = {
   explorerUrl: string;
 };
 
-export const supportedWagmiChains = [mainnet, bsc, polygon] as const;
+export const supportedWagmiChains = [mainnet, bsc, polygon, base, arbitrum, avalanche] as const;
 
 export const SUPPORTED_CHAINS: SupportedChain[] = [
   {
@@ -31,6 +31,27 @@ export const SUPPORTED_CHAINS: SupportedChain[] = [
     shortName: "POL",
     nativeSymbol: "POL",
     explorerUrl: "https://polygonscan.com",
+  },
+  {
+    id: base.id,
+    name: "Base",
+    shortName: "BASE",
+    nativeSymbol: "ETH",
+    explorerUrl: "https://basescan.org",
+  },
+  {
+    id: arbitrum.id,
+    name: "Arbitrum",
+    shortName: "ARB",
+    nativeSymbol: "ETH",
+    explorerUrl: "https://arbiscan.io",
+  },
+  {
+    id: avalanche.id,
+    name: "Avalanche",
+    shortName: "AVAX",
+    nativeSymbol: "AVAX",
+    explorerUrl: "https://snowtrace.io",
   },
 ];
 

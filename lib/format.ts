@@ -38,6 +38,16 @@ export function formatUsd(value?: string | number) {
   }).format(parsed);
 }
 
+export function formatPercent(value: number, maximumFractionDigits = 2) {
+  if (!Number.isFinite(value) || value <= 0) return "0%";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "percent",
+    maximumFractionDigits,
+    minimumFractionDigits: value < 0.01 ? 2 : 0,
+  }).format(value);
+}
+
 export function formatDuration(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 0) return "Under 1 min";
   if (seconds < 60) return `${Math.ceil(seconds)} sec`;
@@ -59,6 +69,15 @@ export function getRouteBridgeFeeUsd(route: Route) {
     const stepFees = step.estimate?.feeCosts?.reduce((sum, fee) => sum + Number(fee.amountUSD || 0), 0) ?? 0;
     return total + stepFees;
   }, 0);
+}
+
+export function getPlatformFeeUsd(route: Route, fee?: number) {
+  if (!fee) return 0;
+  return Number(route.fromAmountUSD || 0) * fee;
+}
+
+export function getNetRouteValueUsd(route: Route) {
+  return Number(route.toAmountUSD || 0) - Number(route.gasCostUSD || 0) - getRouteBridgeFeeUsd(route);
 }
 
 export function getRoutePreview(route: Route) {

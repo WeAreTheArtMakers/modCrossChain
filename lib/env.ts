@@ -13,6 +13,9 @@ export const DEFAULT_SLIPPAGE = clampSlippage(
 );
 
 export const OPTIONAL_LIFI_FEE = parseOptionalFee(process.env.NEXT_PUBLIC_LIFI_FEE);
+export const MIN_PLATFORM_FEE_NOTICE_USD = clampUsdFloor(
+  Number(process.env.NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD ?? "0.5"),
+);
 
 function clampSlippage(value: number) {
   if (!Number.isFinite(value)) return 0.005;
@@ -27,4 +30,9 @@ function parseOptionalFee(rawValue?: string) {
   if (parsed <= 0 || parsed >= 0.1) return undefined;
 
   return parsed;
+}
+
+function clampUsdFloor(value: number) {
+  if (!Number.isFinite(value) || value < 0) return 0.5;
+  return Math.min(value, 100);
 }

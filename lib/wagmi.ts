@@ -1,6 +1,6 @@
 import { http, createConfig } from "wagmi";
 import { injected, walletConnect } from "wagmi/connectors";
-import { bsc, mainnet, polygon } from "viem/chains";
+import { arbitrum, avalanche, base, bsc, mainnet, polygon } from "viem/chains";
 import { supportedWagmiChains } from "@/lib/chains";
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
@@ -35,5 +35,8 @@ export const wagmiConfig = createConfig({
     [mainnet.id]: http(process.env.NEXT_PUBLIC_ETHEREUM_RPC_URL || undefined),
     [bsc.id]: http(process.env.NEXT_PUBLIC_BNB_RPC_URL || undefined),
     [polygon.id]: http(process.env.NEXT_PUBLIC_POLYGON_RPC_URL || undefined),
+    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL || undefined),
+    [arbitrum.id]: http(process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL || undefined),
+    [avalanche.id]: http(process.env.NEXT_PUBLIC_AVALANCHE_RPC_URL || undefined),
   },
 });
