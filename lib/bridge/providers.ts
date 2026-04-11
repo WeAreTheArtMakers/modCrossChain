@@ -1,6 +1,6 @@
 import type { ExecutionOptions, Route, RouteExtended, Token } from "@lifi/sdk";
 import { executeLifiRoute, getBestLifiRoute } from "@/lib/bridge/lifi";
-import type { RoutePreference } from "@/types/bridge";
+import type { PlatformFeeInfo, RoutePreference } from "@/types/bridge";
 
 export type BridgeRouteRequest = {
   address: `0x${string}`;
@@ -17,6 +17,7 @@ export type BridgeRouteResponse = {
   bestRoute: Route;
   comparisons: Partial<Record<RoutePreference, Route | undefined>>;
   destinationToken: Token;
+  platformFee: PlatformFeeInfo;
   routes: Route[];
 };
 

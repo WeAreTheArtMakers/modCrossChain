@@ -13,7 +13,7 @@ import { parseAmountToUnits } from "@/lib/amounts";
 import { DEFAULT_SLIPPAGE, LIFI_INTEGRATOR, OPTIONAL_LIFI_FEE } from "@/lib/env";
 import { getNetRouteValueUsd, getRouteDuration } from "@/lib/format";
 import { LIFI_API_KEY } from "@/lib/server-env";
-import type { RoutePreference } from "@/types/bridge";
+import type { PlatformFeeInfo, RoutePreference } from "@/types/bridge";
 
 type LifiServerGlobal = typeof globalThis & {
   __modCrossChainServerLifiConfigured?: boolean;
@@ -59,28 +59,29 @@ export async function getServerBestRoute(input: BestRouteInput) {
 
   const destinationToken = await resolveDestinationToken(input.fromToken, input.toChainId, input.signal);
 
-  const routeOptions: RouteOptions = {
+  const baseRouteOptions: RouteOptions = {
     allowSwitchChain: true,
-    fee: OPTIONAL_LIFI_FEE,
     integrator: LIFI_INTEGRATOR,
     maxPriceImpact: 0.3,
     order: toLifiOrder(input.order),
     slippage: input.slippage,
   };
 
-  const response = await getRoutes(
-    {
-      fromAddress: input.address,
-      fromAmount: fromAmount.toString(),
-      fromChainId: input.fromChainId,
-      fromTokenAddress: input.fromToken.address,
-      options: routeOptions,
-      toAddress: input.address,
-      toChainId: input.toChainId,
-      toTokenAddress: destinationToken.address,
-    },
-    { signal: input.signal },
-  );
+  const requestPayload = {
+    fromAddress: input.address,
+    fromAmount: fromAmount.toString(),
+    fromChainId: input.fromChainId,
+    fromTokenAddress: input.fromToken.address,
+    toAddress: input.address,
+    toChainId: input.toChainId,
+    toTokenAddress: destinationToken.address,
+  };
+
+  const { platformFee, response } = await getRoutesWithFeeFallback({
+    requestPayload,
+    routeOptions: baseRouteOptions,
+    signal: input.signal,
+  });
 
   const routes = response.routes ?? [];
   if (!routes.length) {
@@ -97,6 +98,7 @@ export async function getServerBestRoute(input: BestRouteInput) {
     bestRoute: comparisons[input.order] ?? comparisons.CHEAPEST ?? routes[0],
     comparisons,
     destinationToken,
+    platformFee,
     routes,
   };
 }
@@ -170,4 +172,96 @@ function toLifiOrder(order: RoutePreference): RouteOptions["order"] {
   }
 
   return "CHEAPEST";
+}
+
+async function getRoutesWithFeeFallback({
+  requestPayload,
+  routeOptions,
+  signal,
+}: {
+  requestPayload: {
+    fromAddress: `0x${string}`;
+    fromAmount: string;
+    fromChainId: number;
+    fromTokenAddress: string;
+    toAddress: `0x${string}`;
+    toChainId: number;
+    toTokenAddress: string;
+  };
+  routeOptions: RouteOptions;
+  signal?: AbortSignal;
+}) {
+  if (!OPTIONAL_LIFI_FEE) {
+    const response = await getRoutes(
+      {
+        ...requestPayload,
+        options: routeOptions,
+      },
+      { signal },
+    );
+
+    return {
+      platformFee: {
+        status: "NOT_CONFIGURED",
+      } satisfies PlatformFeeInfo,
+      response,
+    };
+  }
+
+  try {
+    const response = await getRoutes(
+      {
+        ...requestPayload,
+        options: {
+          ...routeOptions,
+          fee: OPTIONAL_LIFI_FEE,
+        },
+      },
+      { signal },
+    );
+
+    return {
+      platformFee: {
+        appliedRate: OPTIONAL_LIFI_FEE,
+        requestedRate: OPTIONAL_LIFI_FEE,
+        status: "ACTIVE",
+      } satisfies PlatformFeeInfo,
+      response,
+    };
+  } catch (error) {
+    if (!shouldDisableIntegratorFee(error)) {
+      throw error;
+    }
+
+    const response = await getRoutes(
+      {
+        ...requestPayload,
+        options: routeOptions,
+      },
+      { signal },
+    );
+
+    return {
+      platformFee: {
+        message: "Integrator fee is configured in env but not activated in the LI.FI portal yet.",
+        requestedRate: OPTIONAL_LIFI_FEE,
+        status: "DISABLED_UNCONFIGURED",
+      } satisfies PlatformFeeInfo,
+      response,
+    };
+  }
+}
+
+function shouldDisableIntegratorFee(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+
+  return (
+    message.includes("not configured for collecting fees") ||
+    message.includes("configure your fee wallet") ||
+    message.includes("integrator")
+  );
 }

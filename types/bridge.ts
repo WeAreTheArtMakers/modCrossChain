@@ -35,3 +35,12 @@ export type TransactionHistoryItem = {
   txHash?: string;
   txLink?: string;
 };
+
+export type PlatformFeeStatus = "ACTIVE" | "DISABLED_UNCONFIGURED" | "NOT_CONFIGURED";
+
+export type PlatformFeeInfo = {
+  appliedRate?: number;
+  message?: string;
+  requestedRate?: number;
+  status: PlatformFeeStatus;
+};

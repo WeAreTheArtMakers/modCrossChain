@@ -93,7 +93,18 @@ async function waitForMockWallet(page: Page) {
   const connectButton = header.getByRole("button", { name: "Connect wallet" });
   if (await connectButton.isVisible().catch(() => false)) {
     await connectButton.click();
-    await page.getByRole("button", { name: /Mock Connector/i }).click();
+
+    const connectedAfterClick = await connected
+      .waitFor({ state: "visible", timeout: 1_500 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (!connectedAfterClick) {
+      const mockConnectorButton = page.getByRole("button", { name: /Mock Connector/i });
+      if (await mockConnectorButton.isVisible().catch(() => false)) {
+        await mockConnectorButton.click();
+      }
+    }
   }
 
   await expect(connected).toBeVisible();

@@ -14,7 +14,7 @@ import {
 } from "@/lib/format";
 import { MIN_PLATFORM_FEE_NOTICE_USD, OPTIONAL_LIFI_FEE } from "@/lib/env";
 import { analyzeRouteRisk } from "@/lib/route-risk";
-import type { RoutePreference } from "@/types/bridge";
+import type { PlatformFeeInfo, RoutePreference } from "@/types/bridge";
 
 type RouteInfoPanelProps = {
   comparisons?: Partial<Record<RoutePreference, Route | undefined>>;
@@ -22,6 +22,7 @@ type RouteInfoPanelProps = {
   error?: string;
   isLoading: boolean;
   onSelectPreference: (routePreference: RoutePreference) => void;
+  platformFee?: PlatformFeeInfo;
   routePreference: RoutePreference;
   route?: Route;
 };
@@ -34,6 +35,7 @@ export function RouteInfoPanel({
   error,
   isLoading,
   onSelectPreference,
+  platformFee,
   route,
   routePreference,
 }: RouteInfoPanelProps) {
@@ -66,9 +68,10 @@ export function RouteInfoPanel({
     );
   }
 
-  const platformFeeUsd = route ? getPlatformFeeUsd(route, OPTIONAL_LIFI_FEE) : 0;
+  const appliedPlatformFeeRate = platformFee?.status === "ACTIVE" ? platformFee.appliedRate : undefined;
+  const platformFeeUsd = route ? getPlatformFeeUsd(route, appliedPlatformFeeRate) : 0;
   const feeFallsBelowMinimumNotice =
-    OPTIONAL_LIFI_FEE && platformFeeUsd > 0 && platformFeeUsd < MIN_PLATFORM_FEE_NOTICE_USD;
+    appliedPlatformFeeRate && platformFeeUsd > 0 && platformFeeUsd < MIN_PLATFORM_FEE_NOTICE_USD;
   const routeRisk = analyzeRouteRisk(route);
 
   return (
@@ -143,7 +146,13 @@ export function RouteInfoPanel({
         <div className="rounded-md border border-zinc-800 bg-black/20 p-3">
           <dt className="text-xs text-zinc-500">Platform fee</dt>
           <dd className="mt-1 font-medium text-zinc-100">
-            {OPTIONAL_LIFI_FEE ? `${formatUsd(platformFeeUsd)} (${formatPercent(OPTIONAL_LIFI_FEE)})` : "Not set"}
+            {platformFee?.status === "ACTIVE" && appliedPlatformFeeRate
+              ? `${formatUsd(platformFeeUsd)} (${formatPercent(appliedPlatformFeeRate)})`
+              : platformFee?.status === "DISABLED_UNCONFIGURED"
+                ? "Inactive"
+                : OPTIONAL_LIFI_FEE
+                  ? "Pending"
+                  : "Not set"}
           </dd>
         </div>
       </dl>
@@ -177,12 +186,22 @@ export function RouteInfoPanel({
 
       <div className="mt-3 space-y-2 text-xs leading-5">
         <p className="rounded-md border border-zinc-800 bg-black/20 px-3 py-2 text-zinc-400">
-          {OPTIONAL_LIFI_FEE
+          {platformFee?.status === "ACTIVE"
             ? `The live quote includes a visible LI.FI integrator fee.`
-            : `No platform fee is configured in this environment yet.`}{" "}
+            : platformFee?.status === "DISABLED_UNCONFIGURED"
+              ? `A platform fee is configured in env, but LI.FI fee collection is not activated for this integrator yet. This quote was generated without that fee.`
+              : OPTIONAL_LIFI_FEE
+                ? `A platform fee is configured, but it has not been applied to this quote.`
+                : `No platform fee is configured in this environment yet.`}{" "}
           Small transfers below the ${MIN_PLATFORM_FEE_NOTICE_USD.toFixed(2)} target minimum are disclosed, not
           topped up through custody.
         </p>
+
+        {platformFee?.status === "DISABLED_UNCONFIGURED" && platformFee.message ? (
+          <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-100">
+            {platformFee.message}
+          </p>
+        ) : null}
 
         {feeFallsBelowMinimumNotice ? (
           <p className="rounded-md border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-amber-100">

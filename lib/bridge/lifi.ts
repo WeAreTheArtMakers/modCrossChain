@@ -10,6 +10,7 @@ import {
 } from "@lifi/sdk";
 import { getWalletClient, switchChain } from "wagmi/actions";
 import { DEFAULT_SLIPPAGE, LIFI_INTEGRATOR } from "@/lib/env";
+import type { PlatformFeeInfo } from "@/types/bridge";
 import { wagmiConfig } from "@/lib/wagmi";
 import type { RoutePreference } from "@/types/bridge";
 
@@ -108,6 +109,7 @@ export async function getBestLifiRoute(input: BestRouteInput) {
         bestRoute: Route;
         comparisons: RouteComparisons;
         destinationToken: Token;
+        platformFee: PlatformFeeInfo;
         routes: Route[];
       }
     | { error?: string };
@@ -120,6 +122,7 @@ export async function getBestLifiRoute(input: BestRouteInput) {
     bestRoute: payload.bestRoute,
     comparisons: payload.comparisons,
     destinationToken: payload.destinationToken,
+    platformFee: payload.platformFee,
     routes: payload.routes,
   };
 }

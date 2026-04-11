@@ -395,6 +395,7 @@ export function BridgeCard() {
             error={validationError ?? routeError}
             isLoading={routeQuery.isFetching}
             onSelectPreference={setRoutePreference}
+            platformFee={routeQuery.data?.platformFee}
             routePreference={routePreference}
             route={bestRoute}
           />
