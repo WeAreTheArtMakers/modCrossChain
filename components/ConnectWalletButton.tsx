@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { createWalletConnectConnector, walletConnectEnabled } from "@/lib/wagmi";
 import { shortenAddress } from "@/lib/format";
@@ -16,6 +16,7 @@ export function ConnectWalletButton() {
   const { connect, connectors, error, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const walletConnectLoading = open && walletConnectEnabled && !walletConnectConnector;
+  const walletOptions = useMemo(() => getWalletOptions(connectors), [connectors]);
 
   useEffect(() => {
     if (!testWalletEnabled || isConnected || typeof window === "undefined") {
@@ -83,7 +84,7 @@ export function ConnectWalletButton() {
             </div>
           ) : (
             <div className="space-y-2">
-              {connectors.map((walletConnector) => (
+              {walletOptions.map((walletConnector) => (
                 <button
                   key={walletConnector.uid}
                   type="button"
@@ -134,8 +135,12 @@ export function ConnectWalletButton() {
 }
 
 function getConnectorLabel(name: string, type: string) {
+  if (type === "mock") {
+    return "Test wallet";
+  }
+
   if (type === "injected") {
-    return "Browser wallet";
+    return isGenericInjectedLabel(name) ? "Browser wallet" : name;
   }
 
   if (type === "walletConnect") {
@@ -143,4 +148,29 @@ function getConnectorLabel(name: string, type: string) {
   }
 
   return name;
+}
+
+function getWalletOptions(connectors: ReturnType<typeof useConnect>["connectors"]) {
+  const hasNamedInjectedWallet = connectors.some(
+    (connector) => connector.type === "injected" && !isGenericInjectedLabel(connector.name),
+  );
+
+  const seen = new Set<string>();
+  return connectors.filter((connector) => {
+    if (connector.type === "injected" && hasNamedInjectedWallet && isGenericInjectedLabel(connector.name)) {
+      return false;
+    }
+
+    const key = `${connector.type}:${getConnectorLabel(connector.name, connector.type).toLowerCase()}`;
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function isGenericInjectedLabel(name: string) {
+  return ["browser wallet", "injected", "injected wallet"].includes(name.trim().toLowerCase());
 }
