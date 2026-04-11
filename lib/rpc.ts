@@ -1,11 +1,9 @@
 import { fallback, http } from "wagmi";
 import { arbitrum, avalanche, base, bsc, mainnet, polygon } from "viem/chains";
 import { RPC_ENDPOINTS } from "@/lib/env";
+import type { RpcHealthSummary, RpcProbeResult, RpcProbeSource } from "@/types/rpc";
 
 type TransportChain = typeof mainnet | typeof bsc | typeof polygon | typeof base | typeof arbitrum | typeof avalanche;
-type RpcHealthStatus = "FULLY_COVERED" | "PARTIAL" | "PUBLIC_FALLBACK";
-type RpcProbeStatus = "HEALTHY" | "SLOW" | "UNAVAILABLE";
-type RpcProbeSource = "DEDICATED" | "PUBLIC_FALLBACK";
 
 type RpcProbeEntry = {
   chainId: number;
@@ -15,23 +13,6 @@ type RpcProbeEntry = {
   publicUrl: string;
   source: RpcProbeSource;
   targetUrl: string;
-};
-
-export type RpcProbeResult = {
-  chainId: number;
-  error?: string;
-  label: string;
-  latencyMs?: number;
-  source: RpcProbeSource;
-  status: RpcProbeStatus;
-};
-
-export type RpcHealthSummary = {
-  configuredCount: number;
-  missing: string[];
-  results: RpcProbeResult[];
-  status: RpcHealthStatus;
-  totalCount: number;
 };
 
 const RPC_LABELS = {

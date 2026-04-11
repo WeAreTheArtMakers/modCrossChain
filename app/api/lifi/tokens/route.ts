@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const chainId = Number(request.nextUrl.searchParams.get("chainId"));
+  const toChainId = Number(request.nextUrl.searchParams.get("toChainId"));
   const search = request.nextUrl.searchParams.get("search")?.trim() ?? "";
   const clientKey = getRequestClientKey(request);
 
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const cacheKey = getStableCacheKey([chainId, search.toLowerCase()]);
+  const normalizedToChainId = Number.isFinite(toChainId) && toChainId > 0 ? toChainId : undefined;
+  const cacheKey = getStableCacheKey([chainId, normalizedToChainId ?? "same-chain", search.toLowerCase()]);
   const cachedTokens = await readResponseCache<Awaited<ReturnType<typeof getServerSourceTokens>>>({
     key: cacheKey,
     scope: "lifi:tokens",
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const tokens = await getServerSourceTokens(chainId, search);
+    const tokens = await getServerSourceTokens(chainId, search, undefined, normalizedToChainId);
     await writeResponseCache(
       {
         key: cacheKey,

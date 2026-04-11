@@ -9,16 +9,17 @@ import { getChainName } from "@/lib/chains";
 
 type TokenSelectorProps = {
   chainId: number;
+  toChainId?: number;
   selectedToken?: Token;
   onSelect: (token: Token | undefined) => void;
 };
 
-export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelectorProps) {
+export function TokenSelector({ chainId, toChainId, selectedToken, onSelect }: TokenSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const tokenQuery = useTokens(chainId, debouncedSearch);
+  const tokenQuery = useTokens(chainId, debouncedSearch, toChainId);
 
   useEffect(() => {
     function onPointerDown(event: PointerEvent) {
@@ -84,7 +85,7 @@ export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelecto
 
             {!tokenQuery.isLoading && tokenQuery.data?.length === 0 ? (
               <p className="rounded-md bg-zinc-950 px-3 py-2 text-sm text-zinc-500">
-                No supported tokens found.
+                No tokens with destination support were found.
               </p>
             ) : null}
 

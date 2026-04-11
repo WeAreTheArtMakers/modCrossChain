@@ -24,6 +24,7 @@ import { extractTransactionProgress } from "@/lib/transactions";
 import { useBestRoute } from "@/hooks/useBestRoute";
 import { useTransactionHistory } from "@/hooks/useTransactionHistory";
 import type { BridgeExecutionState, RoutePreference, TransactionHistoryItem } from "@/types/bridge";
+import type { RpcHealthSummary } from "@/types/rpc";
 
 const TransactionStatusModal = lazy(() => import("@/components/TransactionStatusModal"));
 const ROUTE_PREFERENCES: RoutePreference[] = ["CHEAPEST", "FASTEST", "BEST_RECEIVED"];
@@ -40,6 +41,11 @@ export function BridgeCard() {
   const currentChainId = useChainId();
   const { switchChainAsync, isPending: isSwitchingChain } = useSwitchChain();
   const [modalOpen, setModalOpen] = useState(false);
+  const [rpcGateState, setRpcGateState] = useState<{
+    error?: string;
+    key?: string;
+    warning?: string;
+  }>({});
   const [execution, setExecution] = useState<BridgeExecutionState>({
     phase: "idle",
   });
@@ -76,6 +82,7 @@ export function BridgeCard() {
     () => (selectedToken ? parseTokenAmount(amount, selectedToken.decimals) : undefined),
     [amount, selectedToken],
   );
+  const routeInputKey = `${fromChainId}:${toChainId}:${selectedToken?.address ?? "no-token"}:${amount}`;
 
   const tokenAddress = selectedToken?.address;
   const validTokenAddress = tokenAddress ? isAddress(tokenAddress) : false;
@@ -259,6 +266,19 @@ export function BridgeCard() {
       return;
     }
 
+    const gate = await verifyExecutionHealth(fromChainId, toChainId);
+    if (!gate.allowed) {
+      setRpcGateState({
+        error: gate.error,
+        key: routeInputKey,
+      });
+      return;
+    }
+
+    setRpcGateState({
+      key: routeInputKey,
+      warning: gate.warning,
+    });
     await executeBridge(bestRoute);
   }
 
@@ -360,7 +380,12 @@ export function BridgeCard() {
 
           <BridgePath active={Boolean(bestRoute)} fromChainId={fromChainId} toChainId={toChainId} />
 
-          <TokenSelector chainId={fromChainId} selectedToken={selectedToken} onSelect={setSelectedToken} />
+          <TokenSelector
+            chainId={fromChainId}
+            onSelect={setSelectedToken}
+            selectedToken={selectedToken}
+            toChainId={toChainId}
+          />
 
           <AmountInput amount={amount} onAmountChange={setAmount} symbol={selectedToken?.symbol} />
 
@@ -428,6 +453,18 @@ export function BridgeCard() {
             </p>
           ) : null}
 
+          {rpcGateState.key === routeInputKey && rpcGateState.error ? (
+            <p className="rounded-lg border border-red-400/25 bg-red-400/10 px-3 py-2 text-sm text-red-100">
+              {rpcGateState.error}
+            </p>
+          ) : null}
+
+          {rpcGateState.key === routeInputKey && rpcGateState.warning ? (
+            <p className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+              {rpcGateState.warning}
+            </p>
+          ) : null}
+
           <button
             type="button"
             disabled={!canBridge && !networkMismatch}
@@ -465,6 +502,66 @@ export function BridgeCard() {
       ) : null}
     </>
   );
+}
+
+async function verifyExecutionHealth(fromChainId: number, toChainId: number) {
+  if (testWalletMode) {
+    return {
+      allowed: true,
+      warning: undefined,
+    };
+  }
+
+  try {
+    const response = await fetch("/api/infra/rpc-health", {
+      cache: "no-store",
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      return {
+        allowed: true,
+        warning: "RPC health check could not be loaded. The bridge can still proceed.",
+      };
+    }
+
+    const payload = (await response.json()) as RpcHealthSummary | { error?: string };
+    if (!("results" in payload)) {
+      return {
+        allowed: true,
+        warning: "RPC health check returned an unexpected response. The bridge can still proceed.",
+      };
+    }
+
+    const targeted = payload.results.filter((entry) => entry.chainId === fromChainId || entry.chainId === toChainId);
+    const unavailable = targeted.filter((entry) => entry.status === "UNAVAILABLE");
+    if (unavailable.length) {
+      const labels = unavailable.map((entry) => entry.label).join(" and ");
+      return {
+        allowed: false,
+        error: `${labels} RPC health is unavailable right now. Wait for the endpoint to recover before signing.`,
+      };
+    }
+
+    const slow = targeted.filter((entry) => entry.status === "SLOW");
+    if (slow.length) {
+      const labels = slow.map((entry) => entry.label).join(" and ");
+      return {
+        allowed: true,
+        warning: `${labels} RPC latency is elevated. Execution may take longer than usual.`,
+      };
+    }
+
+    return {
+      allowed: true,
+      warning: undefined,
+    };
+  } catch {
+    return {
+      allowed: true,
+      warning: "RPC health check timed out. The bridge can still proceed.",
+    };
+  }
 }
 
 function getValidationError({

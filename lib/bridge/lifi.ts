@@ -62,12 +62,15 @@ export function configureLifi() {
   globalForLifi.__modCrossChainLifiConfigured = true;
 }
 
-export async function getSourceTokens(chainId: number, search: string, signal?: AbortSignal) {
+export async function getSourceTokens(chainId: number, search: string, signal?: AbortSignal, toChainId?: number) {
   const query = new URLSearchParams({
     chainId: String(chainId),
   });
   if (search) {
     query.set("search", search);
+  }
+  if (toChainId && toChainId !== chainId) {
+    query.set("toChainId", String(toChainId));
   }
 
   const response = await fetch(`/api/lifi/tokens?${query.toString()}`, {

@@ -1,7 +1,7 @@
 const INTEGRATOR_PATTERN = /[^a-zA-Z0-9._-]/g;
 
 export const LIFI_INTEGRATOR = (
-  process.env.NEXT_PUBLIC_LIFI_INTEGRATOR || "modCrossChain"
+  process.env.NEXT_PUBLIC_LIFI_INTEGRATOR || "modcrosschain"
 )
   .replace(INTEGRATOR_PATTERN, "")
   .slice(0, 23);

@@ -1,7 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { BRAND_HEADLINE, BRAND_SUBHEAD } from "@/lib/branding";
 import { SUPPORTED_CHAINS } from "@/lib/chains";
-import { getRpcHealthSummary, type RpcHealthSummary } from "@/lib/rpc";
+import { getRpcHealthSummary } from "@/lib/rpc";
+import type { RpcHealthSummary } from "@/types/rpc";
 
 const SCENE_NODES = [
   { label: "ETH", x: 62, y: 44 },

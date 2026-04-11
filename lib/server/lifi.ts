@@ -32,21 +32,43 @@ type BestRouteInput = {
 
 type RouteComparisons = Record<RoutePreference, Route | undefined>;
 
-export async function getServerSourceTokens(chainId: number, search: string, signal?: AbortSignal) {
+export async function getServerSourceTokens(chainId: number, search: string, signal?: AbortSignal, toChainId?: number) {
   configureServerLifi();
 
   const response = await getTokens(
     {
       chains: [chainId],
       extended: true,
-      limit: search ? 40 : 80,
+      limit: search ? 60 : 100,
       orderBy: "marketCapUSD",
       search: search || undefined,
     },
     { signal },
   );
 
-  return response.tokens[chainId] ?? [];
+  const sourceTokens = response.tokens[chainId] ?? [];
+  if (!toChainId || toChainId === chainId) {
+    return sourceTokens;
+  }
+
+  const destinationResponse = await getTokens(
+    {
+      chains: [toChainId],
+      extended: true,
+      limit: search ? 80 : 120,
+      orderBy: "marketCapUSD",
+      search: search || undefined,
+    },
+    { signal },
+  );
+
+  const destinationKeys = new Set(
+    (destinationResponse.tokens[toChainId] ?? []).flatMap((token) => getTokenSupportKeys(token)),
+  );
+
+  return sourceTokens.filter((token) =>
+    getTokenSupportKeys(token).some((tokenKey) => destinationKeys.has(tokenKey)),
+  );
 }
 
 export async function getServerBestRoute(input: BestRouteInput) {
@@ -164,6 +186,16 @@ function getRouteComparisons(routes: Route[]): RouteComparisons {
     CHEAPEST: [...routes].sort((left, right) => getNetRouteValueUsd(right) - getNetRouteValueUsd(left))[0],
     FASTEST: [...routes].sort((left, right) => getRouteDuration(left) - getRouteDuration(right))[0],
   };
+}
+
+function getTokenSupportKeys(token: Token) {
+  return Array.from(
+    new Set(
+      [token.coinKey, token.symbol]
+        .filter((value): value is string => typeof value === "string" && value.length > 0)
+        .map((value) => value.toLowerCase()),
+    ),
+  );
 }
 
 function toLifiOrder(order: RoutePreference): RouteOptions["order"] {

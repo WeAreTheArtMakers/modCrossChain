@@ -40,13 +40,16 @@ The UI stays focused on execution: a bridge card paired with a live desktop show
 - Compare cheapest, fastest, and best received routes.
 - Auto-fetch quotes after a 500 ms debounce.
 - Show estimated gas, bridge fee, platform fee, receive amount, ETA, and route steps.
+- Filter source tokens by destination support before the user requests a route.
 - Score route risk and surface low-liquidity pressure before execution.
 - Execute the selected route through LI.FI with client-side wallet prompts.
+- Gate execution with live RPC health checks for the source and destination chains.
 - Track the execution result, transaction hash, copy action, explorer link, and failure retry flow.
 - Persist recent transfer attempts in local browser storage, including low-liquidity warnings and net-after-fees context.
 - Support white-label brand copy, colors, and app URLs through env configuration.
 - Include Sentry and GA4 hooks that can be enabled without further code changes.
 - Protect `/api/lifi/*` with Upstash-backed rate limiting and short-lived response caches when Redis env vars are present.
+- Expose an admin-only LI.FI diagnostics screen for API key, integrator, fee, and withdraw checks.
 - Link to in-app Terms and Supported Jurisdictions pages.
 
 ## Stack
@@ -148,7 +151,7 @@ Open `http://localhost:3000`.
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=
 LIFI_API_KEY=
 NEXT_PUBLIC_LIFI_API_KEY=
-NEXT_PUBLIC_LIFI_INTEGRATOR=modCrossChain
+NEXT_PUBLIC_LIFI_INTEGRATOR=modcrosschain
 NEXT_PUBLIC_DEFAULT_SLIPPAGE=0.005
 NEXT_PUBLIC_LIFI_FEE=0.0015
 NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD=0.50
@@ -159,6 +162,7 @@ NEXT_PUBLIC_APP_ENV=development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+ADMIN_DIAGNOSTICS_TOKEN=
 NEXT_PUBLIC_ETHEREUM_RPC_URL=
 NEXT_PUBLIC_BNB_RPC_URL=
 NEXT_PUBLIC_POLYGON_RPC_URL=
@@ -179,12 +183,14 @@ Operational notes:
 
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is required for WalletConnect support.
 - `LIFI_API_KEY` should be set server-side in production. Do not expose it in `NEXT_PUBLIC_*`.
+- `NEXT_PUBLIC_LIFI_INTEGRATOR` must exactly match the string shown in the LI.FI portal. For this app, use `modcrosschain`.
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` enable shared rate limiting and response caching across Railway instances.
 - dedicated RPC endpoints are recommended for production reliability and now fall back to public RPCs if any chain is missing.
 - `NEXT_PUBLIC_APP_URL` should match the production domain so wallet metadata is accurate.
 - `NEXT_PUBLIC_LIFI_FEE` is optional but now fully surfaced in the UI.
 - `NEXT_PUBLIC_ENABLE_TEST_WALLET=true` enables the mock connector used by Playwright.
 - `NEXT_PUBLIC_LIFI_API_KEY` is supported only as a migration fallback. Production should prefer `LIFI_API_KEY`.
+- `ADMIN_DIAGNOSTICS_TOKEN` protects `/admin/lifi?token=...` so diagnostics stay off the public surface.
 
 ## Scripts
 
@@ -203,11 +209,13 @@ railway login
 railway link
 railway variable set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
 railway variable set LIFI_API_KEY=your_lifi_api_key
+railway variable set NEXT_PUBLIC_LIFI_INTEGRATOR=modcrosschain
 railway variable set NEXT_PUBLIC_LIFI_FEE=0.0015
 railway variable set NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD=0.50
 railway variable set NEXT_PUBLIC_APP_URL=https://your-domain.example
 railway variable set UPSTASH_REDIS_REST_URL=your_upstash_rest_url
 railway variable set UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
+railway variable set ADMIN_DIAGNOSTICS_TOKEN=your_private_admin_token
 railway variable set NIXPACKS_NODE_VERSION=22
 railway up
 ```

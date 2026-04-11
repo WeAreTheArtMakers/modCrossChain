@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { walletConnectEnabled } from "@/lib/wagmi";
+import { createWalletConnectConnector, walletConnectEnabled } from "@/lib/wagmi";
 import { shortenAddress } from "@/lib/format";
 
 const testWalletEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_WALLET === "true";
 
 export function ConnectWalletButton() {
   const [open, setOpen] = useState(false);
+  const [walletConnectConnector, setWalletConnectConnector] = useState<Awaited<
+    ReturnType<typeof createWalletConnectConnector>
+  > | null>(null);
   const { address, connector, isConnected } = useAccount();
   const { connect, connectors, error, isPending } = useConnect();
   const { disconnect } = useDisconnect();
+  const walletConnectLoading = open && walletConnectEnabled && !walletConnectConnector;
 
   useEffect(() => {
     if (!testWalletEnabled || isConnected || typeof window === "undefined") {
@@ -28,6 +32,25 @@ export function ConnectWalletButton() {
       connect({ connector: mockConnector });
     }
   }, [connect, connectors, isConnected]);
+
+  useEffect(() => {
+    if (!open || !walletConnectEnabled || walletConnectConnector) {
+      return;
+    }
+
+    let cancelled = false;
+
+    createWalletConnectConnector()
+      .then((loadedConnector) => {
+        if (!cancelled) {
+          setWalletConnectConnector(loadedConnector ?? null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, walletConnectConnector]);
 
   return (
     <div className="relative">
@@ -74,6 +97,26 @@ export function ConnectWalletButton() {
                   {getConnectorLabel(walletConnector.name, walletConnector.type)}
                 </button>
               ))}
+
+              {walletConnectEnabled ? (
+                <button
+                  type="button"
+                  disabled={isPending || walletConnectLoading}
+                  onClick={async () => {
+                    const connectorToUse = walletConnectConnector ?? (await createWalletConnectConnector());
+                    if (!connectorToUse) {
+                      return;
+                    }
+
+                    setWalletConnectConnector(connectorToUse);
+                    connect({ connector: connectorToUse });
+                    setOpen(false);
+                  }}
+                  className="brand-border-hover h-10 w-full rounded-lg border border-zinc-800 px-3 text-left text-sm font-medium text-zinc-100 disabled:cursor-wait disabled:text-zinc-500"
+                >
+                  {walletConnectLoading ? "Loading WalletConnect" : "WalletConnect"}
+                </button>
+              ) : null}
 
               {!walletConnectEnabled ? (
                 <p className="rounded-md bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100">
