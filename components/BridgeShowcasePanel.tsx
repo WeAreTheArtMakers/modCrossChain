@@ -1,6 +1,7 @@
+import { unstable_cache } from "next/cache";
 import { BRAND_HEADLINE, BRAND_SUBHEAD } from "@/lib/branding";
 import { SUPPORTED_CHAINS } from "@/lib/chains";
-import { RPC_HEALTH } from "@/lib/rpc";
+import { getRpcHealthSummary, type RpcHealthSummary } from "@/lib/rpc";
 
 const SCENE_NODES = [
   { label: "ETH", x: 62, y: 44 },
@@ -35,25 +36,30 @@ const SUMMARY_CARDS = [
   },
 ] as const;
 
-const SIGNAL_STRIPS = [
-  {
-    badge: "Fresh",
-    body: "Short-lived route caching keeps the interface responsive while quotes remain fresh enough for execution.",
-    title: "Quote buffer",
-  },
-  {
-    badge: "Pre-sign",
-    body: "Low-liquidity and fee burden warnings surface before the wallet prompt so users can back out earlier.",
-    title: "Risk engine",
-  },
-  {
-    badge: getInfraBadge(),
-    body: getInfraBody(),
-    title: "Infra posture",
-  },
-] as const;
+const getCachedRpcHealthSummary = unstable_cache(async () => getRpcHealthSummary(), ["rpc-health"], {
+  revalidate: 45,
+});
 
-export function BridgeShowcasePanel() {
+export async function BridgeShowcasePanel() {
+  const rpcHealth = await getCachedRpcHealthSummary();
+  const signalStrips = [
+    {
+      badge: "Fresh",
+      body: "Short-lived route caching keeps the interface responsive while quotes remain fresh enough for execution.",
+      title: "Quote buffer",
+    },
+    {
+      badge: "Pre-sign",
+      body: "Low-liquidity and fee burden warnings surface before the wallet prompt so users can back out earlier.",
+      title: "Risk engine",
+    },
+    {
+      badge: getInfraBadge(rpcHealth),
+      body: getInfraBody(rpcHealth),
+      title: "Infra posture",
+    },
+  ] as const;
+
   return (
     <aside className="relative hidden min-h-[780px] overflow-hidden rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(10,13,17,0.92),rgba(8,10,12,0.84))] px-6 py-6 shadow-[0_30px_110px_rgba(0,0,0,0.45)] lg:block xl:px-8 xl:py-8">
       <div className="desktop-panel-aurora absolute -left-16 top-14 h-56 w-56 rounded-full" aria-hidden />
@@ -185,7 +191,7 @@ export function BridgeShowcasePanel() {
               </div>
 
               <div className="mt-5 space-y-3">
-                {SIGNAL_STRIPS.map((strip, index) => (
+                {signalStrips.map((strip, index) => (
                   <div key={strip.title} className="rounded-[14px] border border-white/8 bg-black/20 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
@@ -197,6 +203,31 @@ export function BridgeShowcasePanel() {
                       </span>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-zinc-400">{strip.body}</p>
+
+                    {strip.title === "Infra posture" ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        {rpcHealth.results.map((result) => (
+                          <div key={result.chainId} className="rounded-[12px] border border-white/8 bg-white/[0.03] px-3 py-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-semibold text-zinc-200">{result.label}</p>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${getProbeBadgeClass(result.status)}`}>
+                                {result.source === "DEDICATED" ? "Dedicated" : "Fallback"}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm font-medium text-white">
+                              {result.status === "UNAVAILABLE" ? "Unavailable" : `${result.latencyMs ?? 0} ms`}
+                            </p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              {result.status === "UNAVAILABLE"
+                                ? result.error ?? "Probe failed"
+                                : result.status === "SLOW"
+                                  ? "Latency is elevated."
+                                  : "Latency is healthy."}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -218,26 +249,41 @@ export function BridgeShowcasePanel() {
   );
 }
 
-function getInfraBadge() {
-  if (RPC_HEALTH.status === "FULLY_COVERED") {
+function getInfraBadge(summary: RpcHealthSummary) {
+  if (summary.status === "FULLY_COVERED") {
     return "Fully covered";
   }
 
-  if (RPC_HEALTH.status === "PARTIAL") {
-    return `${RPC_HEALTH.configuredCount}/${RPC_HEALTH.totalCount} ready`;
+  if (summary.status === "PARTIAL") {
+    return `${summary.configuredCount}/${summary.totalCount} ready`;
   }
 
   return "Public fallback";
 }
 
-function getInfraBody() {
-  if (RPC_HEALTH.status === "FULLY_COVERED") {
-    return "Dedicated RPC coverage is configured for every supported chain. The infra posture health check is fully covered.";
+function getInfraBody(summary: RpcHealthSummary) {
+  const slowCount = summary.results.filter((result) => result.status === "SLOW").length;
+  const unavailableCount = summary.results.filter((result) => result.status === "UNAVAILABLE").length;
+
+  if (summary.status === "FULLY_COVERED") {
+    return `Dedicated RPC coverage is configured for every supported chain. ${slowCount ? `${slowCount} endpoint${slowCount > 1 ? "s are" : " is"} slower than target.` : "Latency probes are healthy across the board."}`;
   }
 
-  if (RPC_HEALTH.status === "PARTIAL") {
-    return `Dedicated RPC coverage is partial. Missing: ${RPC_HEALTH.missing.join(", ")}. Public fallback stays active for the remaining chains.`;
+  if (summary.status === "PARTIAL") {
+    return `Dedicated RPC coverage is partial. Missing: ${summary.missing.join(", ")}. ${unavailableCount ? `${unavailableCount} probe${unavailableCount > 1 ? "s are" : " is"} currently unavailable.` : "Public fallback stays active for the remaining chains."}`;
   }
 
   return "Dedicated RPC endpoints are not configured yet. The app is still live on public RPC fallback, and the health check marks coverage as incomplete.";
+}
+
+function getProbeBadgeClass(status: RpcHealthSummary["results"][number]["status"]) {
+  if (status === "UNAVAILABLE") {
+    return "bg-red-400/15 text-red-200";
+  }
+
+  if (status === "SLOW") {
+    return "bg-amber-400/15 text-amber-100";
+  }
+
+  return "bg-emerald-400/15 text-emerald-100";
 }

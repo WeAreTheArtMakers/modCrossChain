@@ -7,6 +7,7 @@ import {
   formatPercent,
   formatTokenAmount,
   formatUsd,
+  getEstimatedNetReceivedUsd,
   getRouteBridgeFeeUsd,
   getRouteDuration,
   getPlatformFeeUsd,
@@ -53,9 +54,15 @@ export function RouteInfoPanel({
   }
 
   if (error) {
+    const routeUnavailable = /No LI\.FI route/i.test(error);
     return (
       <div className="rounded-lg border border-red-300/25 bg-red-400/10 p-4 text-sm leading-6 text-red-100">
-        {error}
+        <p>{error}</p>
+        {routeUnavailable ? (
+          <p className="mt-2 text-red-50/85">
+            Try a major asset pair such as USDC or USDT, increase the amount slightly, or switch the destination chain.
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -70,6 +77,7 @@ export function RouteInfoPanel({
 
   const appliedPlatformFeeRate = platformFee?.status === "ACTIVE" ? platformFee.appliedRate : undefined;
   const platformFeeUsd = route ? getPlatformFeeUsd(route, appliedPlatformFeeRate) : 0;
+  const netReceivedUsd = getEstimatedNetReceivedUsd(route, appliedPlatformFeeRate);
   const feeFallsBelowMinimumNotice =
     appliedPlatformFeeRate && platformFeeUsd > 0 && platformFeeUsd < MIN_PLATFORM_FEE_NOTICE_USD;
   const routeRisk = analyzeRouteRisk(route);
@@ -109,7 +117,9 @@ export function RouteInfoPanel({
                     : "Unavailable"}
                 </p>
                 <p className="mt-1 text-[13px] text-zinc-500">
-                  {option ? `${formatDuration(getRouteDuration(option))} • ${formatUsd(getRouteBridgeFeeUsd(option))}` : ""}
+                  {option
+                    ? `${formatDuration(getRouteDuration(option))} • ${formatUsd(getRouteBridgeFeeUsd(option))} • Net ${formatUsd(getEstimatedNetReceivedUsd(option, appliedPlatformFeeRate))}`
+                    : ""}
                 </p>
               </button>
             );
@@ -130,7 +140,7 @@ export function RouteInfoPanel({
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-2 text-sm md:grid-cols-5">
         <div className="rounded-md border border-zinc-800 bg-black/20 p-3">
           <dt className="text-xs text-zinc-500">Gas</dt>
           <dd className="mt-1 font-medium text-zinc-100">{formatUsd(route.gasCostUSD)}</dd>
@@ -142,6 +152,10 @@ export function RouteInfoPanel({
         <div className="rounded-md border border-zinc-800 bg-black/20 p-3">
           <dt className="text-xs text-zinc-500">Time</dt>
           <dd className="mt-1 font-medium text-zinc-100">{formatDuration(getRouteDuration(route))}</dd>
+        </div>
+        <div className="rounded-md border border-zinc-800 bg-black/20 p-3">
+          <dt className="text-xs text-zinc-500">Net after fees</dt>
+          <dd className="mt-1 font-medium text-zinc-100">{formatUsd(netReceivedUsd)}</dd>
         </div>
         <div className="rounded-md border border-zinc-800 bg-black/20 p-3">
           <dt className="text-xs text-zinc-500">Platform fee</dt>

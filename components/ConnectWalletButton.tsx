@@ -71,7 +71,7 @@ export function ConnectWalletButton() {
                   }}
                   className="brand-border-hover h-10 w-full rounded-lg border border-zinc-800 px-3 text-left text-sm font-medium text-zinc-100 disabled:cursor-wait disabled:text-zinc-500"
                 >
-                  {walletConnector.name}
+                  {getConnectorLabel(walletConnector.name, walletConnector.type)}
                 </button>
               ))}
 
@@ -88,4 +88,16 @@ export function ConnectWalletButton() {
       ) : null}
     </div>
   );
+}
+
+function getConnectorLabel(name: string, type: string) {
+  if (type === "injected") {
+    return "Browser wallet";
+  }
+
+  if (type === "walletConnect") {
+    return "WalletConnect";
+  }
+
+  return name;
 }

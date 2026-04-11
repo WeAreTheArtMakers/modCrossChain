@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid route preference." }, { status: 400 });
   }
 
-  const rateLimit = enforceRateLimit({
+  const rateLimit = await enforceRateLimit({
     key: clientKey,
     limit: 40,
     scope: "lifi:routes",
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     slippage,
     order,
   ]);
-  const cachedQuote = readResponseCache<Awaited<ReturnType<typeof getServerBestRoute>>>({
+  const cachedQuote = await readResponseCache<Awaited<ReturnType<typeof getServerBestRoute>>>({
     key: cacheKey,
     scope: "lifi:routes",
   });
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       slippage,
       toChainId,
     });
-    writeResponseCache(
+    await writeResponseCache(
       {
         key: cacheKey,
         scope: "lifi:routes",

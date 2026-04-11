@@ -1,10 +1,9 @@
 import type { Route } from "@lifi/sdk";
 import { getRouteBridgeFeeUsd, getRouteDuration } from "@/lib/format";
-
-export type RouteRiskLevel = "LOW" | "MEDIUM" | "HIGH";
+import type { RouteRiskLevel, TransactionHistoryWarningCode } from "@/types/bridge";
 
 export type RouteRiskWarning = {
-  code: "LOW_LIQUIDITY" | "FEE_BURDEN" | "LONG_DURATION" | "MULTI_STEP" | "NETWORK_SWITCH";
+  code: TransactionHistoryWarningCode;
   level: RouteRiskLevel;
   title: string;
   detail: string;

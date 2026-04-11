@@ -76,8 +76,12 @@ export function getPlatformFeeUsd(route: Route, fee?: number) {
   return Number(route.fromAmountUSD || 0) * fee;
 }
 
-export function getNetRouteValueUsd(route: Route) {
-  return Number(route.toAmountUSD || 0) - Number(route.gasCostUSD || 0) - getRouteBridgeFeeUsd(route);
+export function getEstimatedNetReceivedUsd(route: Route, platformFeeRate?: number) {
+  return Number(route.toAmountUSD || 0) - Number(route.gasCostUSD || 0) - getPlatformFeeUsd(route, platformFeeRate);
+}
+
+export function getNetRouteValueUsd(route: Route, platformFeeRate?: number) {
+  return getEstimatedNetReceivedUsd(route, platformFeeRate);
 }
 
 export function getRoutePreview(route: Route) {

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid chainId." }, { status: 400 });
   }
 
-  const rateLimit = enforceRateLimit({
+  const rateLimit = await enforceRateLimit({
     key: clientKey,
     limit: 90,
     scope: "lifi:tokens",
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   }
 
   const cacheKey = getStableCacheKey([chainId, search.toLowerCase()]);
-  const cachedTokens = readResponseCache<Awaited<ReturnType<typeof getServerSourceTokens>>>({
+  const cachedTokens = await readResponseCache<Awaited<ReturnType<typeof getServerSourceTokens>>>({
     key: cacheKey,
     scope: "lifi:tokens",
   });
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokens = await getServerSourceTokens(chainId, search);
-    writeResponseCache(
+    await writeResponseCache(
       {
         key: cacheKey,
         scope: "lifi:tokens",

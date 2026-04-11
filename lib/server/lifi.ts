@@ -243,7 +243,7 @@ async function getRoutesWithFeeFallback({
 
     return {
       platformFee: {
-        message: "Integrator fee is configured in env but not activated in the LI.FI portal yet.",
+        message: `Integrator fee is configured in env, but LI.FI still rejected fee collection for "${LIFI_INTEGRATOR}". Verify the exact integrator slug and fee wallet activation in the LI.FI portal.`,
         requestedRate: OPTIONAL_LIFI_FEE,
         status: "DISABLED_UNCONFIGURED",
       } satisfies PlatformFeeInfo,

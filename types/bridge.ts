@@ -19,6 +19,13 @@ export type BridgeExecutionState = {
 };
 
 export type TransactionHistoryStatus = "SUCCESS" | "FAILED";
+export type RouteRiskLevel = "LOW" | "MEDIUM" | "HIGH";
+export type TransactionHistoryWarningCode =
+  | "LOW_LIQUIDITY"
+  | "FEE_BURDEN"
+  | "LONG_DURATION"
+  | "MULTI_STEP"
+  | "NETWORK_SWITCH";
 
 export type TransactionHistoryItem = {
   createdAt: number;
@@ -28,12 +35,16 @@ export type TransactionHistoryItem = {
   fromSymbol: string;
   id: string;
   routePreview: string;
+  riskLevel?: RouteRiskLevel;
   status: TransactionHistoryStatus;
   toAmount?: string;
   toChainId: number;
   toSymbol: string;
   txHash?: string;
   txLink?: string;
+  netReceivedUsd?: number;
+  liquidityGap?: number;
+  warningCodes?: TransactionHistoryWarningCode[];
 };
 
 export type PlatformFeeStatus = "ACTIVE" | "DISABLED_UNCONFIGURED" | "NOT_CONFIGURED";

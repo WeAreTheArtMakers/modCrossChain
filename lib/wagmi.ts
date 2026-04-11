@@ -22,9 +22,7 @@ const connectors = [
         }),
       ]
     : []),
-  injected({
-    target: "metaMask",
-  }),
+  injected(),
   ...(walletConnectProjectId
     ? [
         walletConnect({

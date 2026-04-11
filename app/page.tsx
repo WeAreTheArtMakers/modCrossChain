@@ -5,6 +5,8 @@ import { BridgeShowcasePanel } from "@/components/BridgeShowcasePanel";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { BRAND_PRODUCT_URL } from "@/lib/branding";
 
+export const revalidate = 45;
+
 export default function Home() {
   return (
     <main className="min-h-screen px-4 py-4 text-zinc-100 sm:px-6 lg:px-8">

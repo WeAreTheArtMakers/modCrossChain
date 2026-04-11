@@ -29,13 +29,13 @@
 
 modCrossChain is a wallet-native bridge frontend for Ethereum, BNB Chain, Polygon, Base, Arbitrum, and Avalanche. It uses the LI.FI aggregator SDK for route discovery and execution, keeps signing inside the user's wallet, and avoids custom bridge protocol logic entirely.
 
-The UI stays focused on execution: a bridge card paired with a live desktop showcase panel, visible fee disclosure, route comparison for cheapest / fastest / best received, a transaction modal with copy-hash and retry actions, route risk and low-liquidity warnings, and local browser history for recent bridge attempts.
+The UI stays focused on execution: a bridge card paired with a live desktop showcase panel, visible fee disclosure, route comparison for cheapest / fastest / best received, a net-after-fees metric, a transaction modal with copy-hash and retry actions, route risk and low-liquidity warnings, and local browser history for recent bridge attempts.
 
 ![modCrossChain desktop preview](./docs/assets/bridge-desktop.png)
 
 ## Product Surface
 
-- Connect wallet with injected providers and WalletConnect.
+- Connect with a browser-injected wallet or WalletConnect.
 - Select source chain, destination chain, token, amount, and route preference.
 - Compare cheapest, fastest, and best received routes.
 - Auto-fetch quotes after a 500 ms debounce.
@@ -43,10 +43,10 @@ The UI stays focused on execution: a bridge card paired with a live desktop show
 - Score route risk and surface low-liquidity pressure before execution.
 - Execute the selected route through LI.FI with client-side wallet prompts.
 - Track the execution result, transaction hash, copy action, explorer link, and failure retry flow.
-- Persist recent transfer attempts in local browser storage.
+- Persist recent transfer attempts in local browser storage, including low-liquidity warnings and net-after-fees context.
 - Support white-label brand copy, colors, and app URLs through env configuration.
 - Include Sentry and GA4 hooks that can be enabled without further code changes.
-- Protect `/api/lifi/*` with rate limiting and short-lived response caches.
+- Protect `/api/lifi/*` with Upstash-backed rate limiting and short-lived response caches when Redis env vars are present.
 - Link to in-app Terms and Supported Jurisdictions pages.
 
 ## Stack
@@ -56,7 +56,7 @@ The UI stays focused on execution: a bridge card paired with a live desktop show
 | Framework | Next.js 16 App Router |
 | UI | React 19, Tailwind CSS 4 |
 | Language | TypeScript |
-| Wallets | wagmi, viem, MetaMask, WalletConnect |
+| Wallets | wagmi, viem, injected wallet, WalletConnect |
 | Bridge Aggregation | LI.FI SDK |
 | State | Zustand |
 | Local persistence | Browser localStorage |
@@ -157,6 +157,8 @@ NEXT_PUBLIC_SENTRY_DSN=
 NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=0.15
 NEXT_PUBLIC_APP_ENV=development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 NEXT_PUBLIC_ETHEREUM_RPC_URL=
 NEXT_PUBLIC_BNB_RPC_URL=
 NEXT_PUBLIC_POLYGON_RPC_URL=
@@ -177,6 +179,7 @@ Operational notes:
 
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is required for WalletConnect support.
 - `LIFI_API_KEY` should be set server-side in production. Do not expose it in `NEXT_PUBLIC_*`.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` enable shared rate limiting and response caching across Railway instances.
 - dedicated RPC endpoints are recommended for production reliability and now fall back to public RPCs if any chain is missing.
 - `NEXT_PUBLIC_APP_URL` should match the production domain so wallet metadata is accurate.
 - `NEXT_PUBLIC_LIFI_FEE` is optional but now fully surfaced in the UI.
@@ -203,6 +206,8 @@ railway variable set LIFI_API_KEY=your_lifi_api_key
 railway variable set NEXT_PUBLIC_LIFI_FEE=0.0015
 railway variable set NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD=0.50
 railway variable set NEXT_PUBLIC_APP_URL=https://your-domain.example
+railway variable set UPSTASH_REDIS_REST_URL=your_upstash_rest_url
+railway variable set UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
 railway variable set NIXPACKS_NODE_VERSION=22
 railway up
 ```
@@ -223,6 +228,7 @@ They are designed for Railway variable imports and partner-specific branding rol
 
 - Sentry DSN, release upload credentials, and analytics IDs in the production environment.
 - Dedicated RPC URLs from a provider such as Alchemy, QuickNode, or Ankr for every supported chain.
+- Verify LI.FI integrator fee activation against the exact `NEXT_PUBLIC_LIFI_INTEGRATOR` slug used by the app.
 - White-label packs per partner deployment, including brand assets, support URL, and fee policy copy.
 - Token destination override instead of symbol-first resolution.
 - Optional notifications for route completion and failure follow-up.

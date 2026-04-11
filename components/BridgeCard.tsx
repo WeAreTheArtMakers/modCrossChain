@@ -16,7 +16,8 @@ import { executeLifiRoute } from "@/lib/bridge/lifi";
 import { getChainName, isSupportedChainId } from "@/lib/chains";
 import { DEFAULT_SLIPPAGE } from "@/lib/env";
 import { toHumanBridgeError } from "@/lib/errors";
-import { formatTokenAmount, getRoutePreview, parseTokenAmount } from "@/lib/format";
+import { formatTokenAmount, getEstimatedNetReceivedUsd, getRoutePreview, parseTokenAmount } from "@/lib/format";
+import { analyzeRouteRisk } from "@/lib/route-risk";
 import { trackEvent } from "@/lib/analytics";
 import { useBridgeStore } from "@/lib/store";
 import { extractTransactionProgress } from "@/lib/transactions";
@@ -121,6 +122,8 @@ export function BridgeCard() {
   const routeError = routeQuery.error ? toHumanBridgeError(routeQuery.error) : undefined;
   const networkMismatch = isConnected && currentChainId !== fromChainId;
   const canBridge = Boolean(isConnected && bestRoute && !validationError && !routeQuery.isFetching);
+  const activePlatformFeeRate =
+    routeQuery.data?.platformFee?.status === "ACTIVE" ? routeQuery.data.platformFee.appliedRate : undefined;
   const buttonLabel = getButtonLabel({
     canBridge,
     isConnected,
@@ -128,6 +131,8 @@ export function BridgeCard() {
     isSwitchingChain,
     networkMismatch,
     fromChainId,
+    routeError,
+    validationError,
   });
 
   useEffect(() => {
@@ -212,7 +217,15 @@ export function BridgeCard() {
         route_id: executedRoute.id,
         to_chain_id: executedRoute.toChainId,
       });
-      pushHistoryItem(createHistoryItem({ route: executedRoute, status: "SUCCESS", txHash: progress.txHash, txLink: progress.txLink }));
+      pushHistoryItem(
+        createHistoryItem({
+          platformFeeRate: activePlatformFeeRate,
+          route: executedRoute,
+          status: "SUCCESS",
+          txHash: progress.txHash,
+          txLink: progress.txLink,
+        }),
+      );
     } catch (error) {
       const humanError = toHumanBridgeError(error);
       Sentry.captureException(error, {
@@ -233,6 +246,7 @@ export function BridgeCard() {
       pushHistoryItem(
         createHistoryItem({
           error: humanError,
+          platformFeeRate: activePlatformFeeRate,
           route: routeToExecute,
           status: "FAILED",
         }),
@@ -280,13 +294,16 @@ export function BridgeCard() {
     status,
     txHash,
     txLink,
+    platformFeeRate,
   }: {
     error?: string;
+    platformFeeRate?: number;
     route?: Route;
     status: TransactionHistoryItem["status"];
     txHash?: string;
     txLink?: string;
   }): TransactionHistoryItem {
+    const routeRisk = route ? analyzeRouteRisk(route) : undefined;
     return {
       createdAt: Date.now(),
       error,
@@ -294,13 +311,17 @@ export function BridgeCard() {
       fromChainId,
       fromSymbol: route?.fromToken.symbol ?? selectedToken?.symbol ?? "Token",
       id: `${Date.now()}-${status}-${txHash ?? crypto.randomUUID()}`,
+      liquidityGap: routeRisk?.liquidityGap,
+      netReceivedUsd: route ? getEstimatedNetReceivedUsd(route, platformFeeRate) : undefined,
       routePreview: route ? getRoutePreview(route) : "LI.FI route",
+      riskLevel: routeRisk?.level,
       status,
       toAmount: route ? `${formatTokenAmount(route.toAmount, route.toToken.decimals)} ${route.toToken.symbol}` : undefined,
       toChainId,
       toSymbol: route?.toToken.symbol ?? routeQuery.data?.destinationToken?.symbol ?? selectedToken?.symbol ?? "Token",
       txHash,
       txLink,
+      warningCodes: routeRisk?.warnings.map((warning) => warning.code),
     };
   }
 
@@ -482,6 +503,8 @@ function getButtonLabel({
   isFetchingRoute,
   isSwitchingChain,
   networkMismatch,
+  routeError,
+  validationError,
 }: {
   canBridge: boolean;
   fromChainId: number;
@@ -489,13 +512,47 @@ function getButtonLabel({
   isFetchingRoute: boolean;
   isSwitchingChain: boolean;
   networkMismatch: boolean;
+  routeError?: string;
+  validationError?: string;
 }) {
   if (!isConnected) return "Connect wallet";
   if (isSwitchingChain) return "Switching network";
   if (networkMismatch) return `Switch to ${getChainName(fromChainId)}`;
   if (isFetchingRoute) return "Finding best route";
+  if (validationError) return getValidationButtonLabel(validationError);
+  if (routeError) {
+    return /No LI\.FI route/i.test(routeError) ? "No route found" : "Quote unavailable";
+  }
   if (!canBridge) return "Bridge unavailable";
   return "Bridge Now";
+}
+
+function getValidationButtonLabel(validationError: string) {
+  if (/different source and destination chains/i.test(validationError)) {
+    return "Choose different chains";
+  }
+
+  if (/select a source token/i.test(validationError)) {
+    return "Select token";
+  }
+
+  if (/amount to bridge/i.test(validationError)) {
+    return "Enter amount";
+  }
+
+  if (/greater than zero/i.test(validationError)) {
+    return "Enter valid amount";
+  }
+
+  if (/invalid address/i.test(validationError)) {
+    return "Token unsupported";
+  }
+
+  if (/insufficient/i.test(validationError)) {
+    return "Insufficient balance";
+  }
+
+  return "Review input";
 }
 
 function getRoutePreferenceLabel(value: RoutePreference) {
