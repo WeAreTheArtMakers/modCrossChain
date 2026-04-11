@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
+import { CopyValueButton } from "@/components/CopyValueButton";
 import { ADMIN_DIAGNOSTICS_TOKEN } from "@/lib/server-env";
 import { getLifiDiagnostics } from "@/lib/server/lifi-diagnostics";
 
@@ -52,9 +54,50 @@ export default async function AdminLifiDiagnosticsPage({ searchParams }: AdminLi
             body={diagnostics.fee.message}
             eyebrow="Fee collection"
             status={diagnostics.fee.status}
-            title={diagnostics.fee.configuredRate ? `${(diagnostics.fee.configuredRate * 100).toFixed(2)}% requested` : "Disabled"}
+            title={
+              diagnostics.fee.configuredRate
+                ? `${(diagnostics.fee.configuredRate * 100).toFixed(2)}% requested`
+                : "Disabled"
+            }
+            footer={
+              <p className="text-xs text-zinc-500">
+                Total collected: <span className="font-semibold text-zinc-200">${diagnostics.fee.totalCollectedUsd.toFixed(2)}</span>
+              </p>
+            }
           />
         </div>
+
+        <section className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
+          <div className="flex items-end justify-between gap-3 border-b border-white/8 pb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">Env health</p>
+              <h2 className="mt-2 text-2xl font-semibold">Bridge runtime essentials</h2>
+            </div>
+            <p className="max-w-sm text-right text-sm leading-6 text-zinc-500">
+              This stays focused on quote, fee collection, cache, and RPC coverage. Nothing extra.
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {diagnostics.envHealth.map((entry) => (
+              <article key={entry.key} className="rounded-[18px] border border-white/8 bg-black/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">{entry.kind}</p>
+                    <h3 className="mt-2 text-sm font-semibold text-white">{entry.key}</h3>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${getStatusClass(entry.status)}`}>
+                    {entry.status}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">{entry.preview}</p>
+                <div className="mt-4">
+                  <CopyValueButton value={entry.key} />
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
           <div className="flex flex-col gap-3 border-b border-white/8 pb-4 sm:flex-row sm:items-end sm:justify-between">
@@ -89,11 +132,13 @@ function DiagnosticsCard({
   raw,
   status,
   title,
+  footer,
 }: {
   body: string;
   eyebrow: string;
+  footer?: ReactNode;
   raw?: unknown;
-  status: "OK" | "WARN" | "ERROR" | "MISSING";
+  status: "OK" | "WARN" | "ERROR" | "MISSING" | "INFO";
   title: string;
 }) {
   return (
@@ -108,6 +153,7 @@ function DiagnosticsCard({
         </span>
       </div>
       <p className="mt-4 text-sm leading-7 text-zinc-300">{body}</p>
+      {footer ? <div className="mt-4">{footer}</div> : null}
       {raw ? (
         <pre className="mt-4 overflow-x-auto rounded-[16px] border border-white/8 bg-zinc-950/80 p-3 text-xs leading-6 text-zinc-400">
           {JSON.stringify(raw, null, 2)}
@@ -117,9 +163,13 @@ function DiagnosticsCard({
   );
 }
 
-function getStatusClass(status: "OK" | "WARN" | "ERROR" | "MISSING") {
+function getStatusClass(status: "OK" | "WARN" | "ERROR" | "MISSING" | "INFO") {
   if (status === "OK") {
     return "border border-emerald-400/20 bg-emerald-400/10 text-emerald-200";
+  }
+
+  if (status === "INFO") {
+    return "border border-sky-400/20 bg-sky-400/10 text-sky-100";
   }
 
   if (status === "WARN") {

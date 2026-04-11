@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   createConfig as createLifiConfig,
+  getConnections,
   getRoutes,
   getToken,
   getTokens,
@@ -51,24 +52,42 @@ export async function getServerSourceTokens(chainId: number, search: string, sig
     return sourceTokens;
   }
 
-  const destinationResponse = await getTokens(
-    {
-      chains: [toChainId],
-      extended: true,
-      limit: search ? 80 : 120,
-      orderBy: "marketCapUSD",
-      search: search || undefined,
-    },
-    { signal },
-  );
+  try {
+    const connections = await getConnections(
+      {
+        fromChain: chainId,
+        toChain: toChainId,
+      },
+      { signal },
+    );
 
-  const destinationKeys = new Set(
-    (destinationResponse.tokens[toChainId] ?? []).flatMap((token) => getTokenSupportKeys(token)),
-  );
+    const supportedSourceKeys = new Set(
+      connections.connections.flatMap((connection) =>
+        connection.fromTokens.map((token) => token.address.toLowerCase()),
+      ),
+    );
 
-  return sourceTokens.filter((token) =>
-    getTokenSupportKeys(token).some((tokenKey) => destinationKeys.has(tokenKey)),
-  );
+    return sourceTokens.filter((token) => supportedSourceKeys.has(token.address.toLowerCase()));
+  } catch {
+    const destinationResponse = await getTokens(
+      {
+        chains: [toChainId],
+        extended: true,
+        limit: search ? 80 : 120,
+        orderBy: "marketCapUSD",
+        search: search || undefined,
+      },
+      { signal },
+    );
+
+    const destinationKeys = new Set(
+      (destinationResponse.tokens[toChainId] ?? []).flatMap((token) => getTokenSupportKeys(token)),
+    );
+
+    return sourceTokens.filter((token) =>
+      getTokenSupportKeys(token).some((tokenKey) => destinationKeys.has(tokenKey)),
+    );
+  }
 }
 
 export async function getServerBestRoute(input: BestRouteInput) {
@@ -188,10 +207,10 @@ function getRouteComparisons(routes: Route[]): RouteComparisons {
   };
 }
 
-function getTokenSupportKeys(token: Token) {
+function getTokenSupportKeys(token: Pick<Token, "address" | "coinKey" | "symbol">) {
   return Array.from(
     new Set(
-      [token.coinKey, token.symbol]
+      [token.address, token.coinKey, token.symbol]
         .filter((value): value is string => typeof value === "string" && value.length > 0)
         .map((value) => value.toLowerCase()),
     ),

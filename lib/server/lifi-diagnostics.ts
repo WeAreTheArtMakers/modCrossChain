@@ -2,11 +2,23 @@ import "server-only";
 
 import { SUPPORTED_CHAINS } from "@/lib/chains";
 import { LIFI_INTEGRATOR, OPTIONAL_LIFI_FEE } from "@/lib/env";
-import { LIFI_API_KEY } from "@/lib/server-env";
+import {
+  ADMIN_DIAGNOSTICS_TOKEN,
+  LIFI_API_KEY,
+  UPSTASH_REDIS_REST_TOKEN,
+  UPSTASH_REDIS_REST_URL,
+} from "@/lib/server-env";
+import { RPC_ENDPOINTS } from "@/lib/env";
 
 const LIFI_API_BASE = "https://li.quest/v1";
 
-type DiagnosticsStatus = "OK" | "WARN" | "ERROR" | "MISSING";
+type DiagnosticsStatus = "OK" | "WARN" | "ERROR" | "MISSING" | "INFO";
+
+type FeeBalanceEntry = {
+  amountUsd?: number;
+  chainId?: number;
+  symbol?: string;
+};
 
 export type LifiDiagnostics = {
   apiKey: {
@@ -15,8 +27,15 @@ export type LifiDiagnostics = {
     raw?: unknown;
     status: DiagnosticsStatus;
   };
+  envHealth: Array<{
+    key: string;
+    kind: "public" | "secret";
+    preview: string;
+    status: DiagnosticsStatus;
+  }>;
   fee: {
     configuredRate?: number;
+    totalCollectedUsd: number;
     message: string;
     status: DiagnosticsStatus;
   };
@@ -39,6 +58,7 @@ export type LifiDiagnostics = {
 export async function getLifiDiagnostics(): Promise<LifiDiagnostics> {
   const apiKey = await getApiKeyStatus();
   const integration = await getIntegrationStatus();
+  const totalCollectedUsd = getTotalCollectedUsd(integration.raw);
   const withdrawals = await Promise.all(
     SUPPORTED_CHAINS.map(async (chain) => ({
       chainId: chain.id,
@@ -49,7 +69,8 @@ export async function getLifiDiagnostics(): Promise<LifiDiagnostics> {
 
   return {
     apiKey,
-    fee: getFeeStatus(integration.status, withdrawals),
+    envHealth: getEnvHealth(),
+    fee: getFeeStatus(integration.status, totalCollectedUsd),
     generatedAt: new Date().toISOString(),
     integration,
     integrator: LIFI_INTEGRATOR,
@@ -115,6 +136,14 @@ async function getWithdrawalStatus(chainId: number): Promise<{
   );
 
   if (!response.ok) {
+    if (isEmptyWithdrawResponse(response.data, response.message)) {
+      return {
+        message: "No collected fees are waiting on this chain yet.",
+        raw: response.data,
+        status: "INFO",
+      };
+    }
+
     return {
       message:
         response.status === 404
@@ -134,11 +163,12 @@ async function getWithdrawalStatus(chainId: number): Promise<{
 
 function getFeeStatus(
   integrationStatus: DiagnosticsStatus,
-  withdrawals: LifiDiagnostics["withdrawals"],
+  totalCollectedUsd: number,
 ): LifiDiagnostics["fee"] {
   if (!OPTIONAL_LIFI_FEE) {
     return {
       message: "NEXT_PUBLIC_LIFI_FEE is not set, so no integrator fee is being requested.",
+      totalCollectedUsd,
       status: "MISSING",
     };
   }
@@ -148,17 +178,19 @@ function getFeeStatus(
       configuredRate: OPTIONAL_LIFI_FEE,
       message:
         "The fee rate is configured in the app, but the LI.FI integration record is not healthy yet. Check the exact integrator string and portal activation.",
+      totalCollectedUsd,
       status: "WARN",
     };
   }
 
-  const hasLiveWithdrawPayload = withdrawals.some((entry) => entry.status === "OK");
+  const hasCollectedFees = totalCollectedUsd > 0;
   return {
     configuredRate: OPTIONAL_LIFI_FEE,
-    message: hasLiveWithdrawPayload
-      ? "Fee routing looks active. Withdraw payloads are reachable from the LI.FI API."
-      : "The fee rate is configured and the integration exists, but no withdraw payload was returned yet.",
-    status: hasLiveWithdrawPayload ? "OK" : "WARN",
+    message: hasCollectedFees
+      ? "Fee routing is active and collected balances are present in the LI.FI integration record."
+      : "Fee routing is active, but there are no collected balances to withdraw yet.",
+    totalCollectedUsd,
+    status: "OK",
   };
 }
 
@@ -242,6 +274,78 @@ function summarizeWithdrawalPayload(data: unknown) {
   return directPreview || "Withdraw endpoint responded.";
 }
 
+function getEnvHealth(): LifiDiagnostics["envHealth"] {
+  const configuredRpcCount = Object.values(RPC_ENDPOINTS).filter(Boolean).length;
+  const totalRpcCount = Object.keys(RPC_ENDPOINTS).length;
+
+  return [
+    getEnvEntry("LIFI_API_KEY", "secret", Boolean(LIFI_API_KEY)),
+    getEnvEntry("UPSTASH_REDIS_REST_URL", "secret", Boolean(UPSTASH_REDIS_REST_URL)),
+    getEnvEntry("UPSTASH_REDIS_REST_TOKEN", "secret", Boolean(UPSTASH_REDIS_REST_TOKEN)),
+    getEnvEntry("ADMIN_DIAGNOSTICS_TOKEN", "secret", Boolean(ADMIN_DIAGNOSTICS_TOKEN)),
+    getEnvEntry("NEXT_PUBLIC_LIFI_INTEGRATOR", "public", Boolean(LIFI_INTEGRATOR), LIFI_INTEGRATOR),
+    getEnvEntry("NEXT_PUBLIC_LIFI_FEE", "public", Boolean(OPTIONAL_LIFI_FEE), OPTIONAL_LIFI_FEE?.toString()),
+    {
+      key: "NEXT_PUBLIC_RPC_COVERAGE",
+      kind: "public",
+      preview: `${configuredRpcCount}/${totalRpcCount} configured`,
+      status: configuredRpcCount === totalRpcCount ? "OK" : configuredRpcCount > 0 ? "WARN" : "MISSING",
+    },
+  ];
+}
+
+function getEnvEntry(
+  key: string,
+  kind: "public" | "secret",
+  configured: boolean,
+  preview?: string,
+) {
+  return {
+    key,
+    kind,
+    preview: preview ?? (configured ? "Configured" : "Missing"),
+    status: configured ? "OK" : "MISSING",
+  } satisfies LifiDiagnostics["envHealth"][number];
+}
+
+function extractFeeBalances(data: unknown) {
+  if (!data || typeof data !== "object") {
+    return [] as FeeBalanceEntry[];
+  }
+
+  const feeBalances = (data as { feeBalances?: unknown }).feeBalances;
+  if (!Array.isArray(feeBalances)) {
+    return [] as FeeBalanceEntry[];
+  }
+
+  return feeBalances.map((entry) => {
+    const record = entry as Record<string, unknown>;
+    return {
+      amountUsd: toNumber(record.amountUSD ?? record.amountUsd ?? record.usdValue),
+      chainId: toNumber(record.chainId),
+      symbol: firstString(record, ["symbol", "tokenSymbol", "coinKey"]),
+    } satisfies FeeBalanceEntry;
+  });
+}
+
+function isEmptyWithdrawResponse(data: unknown, message?: string) {
+  if (typeof message === "string" && /no tokens to withdraw/i.test(message)) {
+    return true;
+  }
+
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const record = data as Record<string, unknown>;
+  return typeof record.message === "string" && /no tokens to withdraw/i.test(record.message);
+}
+
+function getTotalCollectedUsd(data: unknown) {
+  const total = extractFeeBalances(data).reduce((sum, entry) => sum + (entry.amountUsd ?? 0), 0);
+  return Number(total.toFixed(2));
+}
+
 function summarizeUnknownRecord(value: unknown) {
   if (!value || typeof value !== "object") {
     return "";
@@ -263,6 +367,21 @@ function firstString(record: Record<string, unknown>, keys: string[]) {
     }
     if (typeof value === "number" && Number.isFinite(value)) {
       return String(value);
+    }
+  }
+
+  return undefined;
+}
+
+function toNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
     }
   }
 
