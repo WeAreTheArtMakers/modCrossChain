@@ -33,24 +33,24 @@ export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelecto
 
   return (
     <div ref={wrapperRef} className="relative">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+      <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-xs">
         Token
       </span>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="brand-border-hover flex h-14 w-full items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-left outline-none"
+        className="brand-border-hover flex h-14 w-full items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-4 text-left outline-none"
       >
         {selectedToken ? (
           <span className="flex min-w-0 items-center gap-3">
             <TokenLogo logoURI={selectedToken.logoURI} symbol={selectedToken.symbol} />
             <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-white">{selectedToken.symbol}</span>
-              <span className="block truncate text-xs text-zinc-500">{selectedToken.name}</span>
+              <span className="block truncate text-[15px] font-semibold text-white sm:text-base">{selectedToken.symbol}</span>
+              <span className="block truncate text-[13px] text-zinc-500 sm:text-sm">{selectedToken.name}</span>
             </span>
           </span>
         ) : (
-          <span className="text-sm text-zinc-500">Select token on {getChainName(chainId)}</span>
+          <span className="text-[15px] text-zinc-500 sm:text-base">Select token on {getChainName(chainId)}</span>
         )}
         <span className="text-zinc-500" aria-hidden>
           ▾
@@ -58,13 +58,13 @@ export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelecto
       </button>
 
       {open ? (
-        <div className="absolute z-20 mt-2 w-full rounded-lg border border-zinc-800 bg-[#0d100f] p-2 shadow-2xl shadow-black/60">
+        <div className="absolute z-20 mt-2 w-full rounded-[18px] border border-white/10 bg-[#0d1012]/95 p-2 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             autoFocus
             placeholder="Search token"
-            className="brand-border-hover mb-2 h-10 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-[rgb(var(--brand-accent-rgb)/0.7)]"
+            className="brand-border-hover mb-2 h-11 w-full rounded-xl border border-zinc-800 bg-zinc-950 px-3 text-[15px] text-white outline-none placeholder:text-zinc-600 focus:border-[rgb(var(--brand-accent-rgb)/0.7)] sm:text-base"
           />
 
           <div className="max-h-72 overflow-y-auto pr-1">
@@ -97,12 +97,12 @@ export function TokenSelector({ chainId, selectedToken, onSelect }: TokenSelecto
                   setOpen(false);
                   setSearch("");
                 }}
-                className="flex h-12 w-full items-center gap-3 rounded-md px-2 text-left transition hover:bg-zinc-900"
+                className="flex min-h-13 w-full items-center gap-3 rounded-xl px-3 text-left transition hover:bg-zinc-900"
               >
                 <TokenLogo logoURI={token.logoURI} symbol={token.symbol} />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-white">{token.symbol}</span>
-                  <span className="block truncate text-xs text-zinc-500">{token.name}</span>
+                  <span className="block truncate text-[15px] font-semibold text-white sm:text-base">{token.symbol}</span>
+                  <span className="block truncate text-[13px] text-zinc-500 sm:text-sm">{token.name}</span>
                 </span>
               </button>
             ))}

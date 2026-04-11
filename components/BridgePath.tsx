@@ -10,7 +10,7 @@ type BridgePathProps = {
 
 export function BridgePath({ active, fromChainId, toChainId }: BridgePathProps) {
   return (
-    <div className="rounded-lg bg-[#131315] px-3 py-3">
+    <div className="rounded-xl border border-white/6 bg-[#131315] px-3 py-3.5">
       <div className="flex items-center gap-3">
         <ChainPill label={getChainName(fromChainId)} />
         <div className="relative h-px flex-1 border-t border-dashed border-zinc-700">
@@ -29,7 +29,7 @@ export function BridgePath({ active, fromChainId, toChainId }: BridgePathProps) 
 
 function ChainPill({ label }: { label: string }) {
   return (
-    <span className="min-w-0 rounded-md bg-black px-2.5 py-1.5 text-xs font-semibold text-zinc-100">
+    <span className="min-w-0 rounded-md bg-black px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-100 sm:text-xs">
       {label}
     </span>
   );

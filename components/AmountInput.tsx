@@ -9,18 +9,20 @@ type AmountInputProps = {
 export function AmountInput({ amount, symbol, onAmountChange }: AmountInputProps) {
   return (
     <label className="block">
-      <span className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+      <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-xs">
         Amount
       </span>
-      <div className="brand-border-hover flex min-h-16 items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-950/80 px-4 focus-within:border-[rgb(var(--brand-accent-rgb)/0.7)]">
+      <div className="brand-border-hover flex min-h-[72px] items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/80 px-4 focus-within:border-[rgb(var(--brand-accent-rgb)/0.7)]">
         <input
           value={amount}
           onChange={(event) => onAmountChange(sanitizeAmount(event.target.value))}
           inputMode="decimal"
           placeholder="0.00"
-          className="w-full bg-transparent text-3xl font-semibold text-white outline-none placeholder:text-zinc-700"
+          className="w-full bg-transparent text-[2rem] font-semibold text-white outline-none placeholder:text-zinc-600 sm:text-[2.2rem]"
         />
-        <span className="shrink-0 text-sm font-medium text-zinc-400">{symbol ?? "TOKEN"}</span>
+        <span className="shrink-0 text-[13px] font-semibold uppercase tracking-[0.1em] text-zinc-400 sm:text-sm">
+          {symbol ?? "TOKEN"}
+        </span>
       </div>
     </label>
   );

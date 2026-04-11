@@ -26,6 +26,12 @@ import type { BridgeExecutionState, RoutePreference, TransactionHistoryItem } fr
 
 const TransactionStatusModal = lazy(() => import("@/components/TransactionStatusModal"));
 const ROUTE_PREFERENCES: RoutePreference[] = ["CHEAPEST", "FASTEST", "BEST_RECEIVED"];
+const SLIPPAGE_OPTIONS = [
+  { label: "0.3%", value: 0.003 },
+  { label: "0.5%", value: 0.005 },
+  { label: "1.0%", value: 0.01 },
+  { label: "2.0%", value: 0.02 },
+] as const;
 const testWalletMode = process.env.NEXT_PUBLIC_ENABLE_TEST_WALLET === "true";
 
 export function BridgeCard() {
@@ -303,8 +309,10 @@ export function BridgeCard() {
       <div className="w-full max-w-[480px] rounded-[20px] border border-white/8 bg-[linear-gradient(180deg,rgba(15,18,22,0.96),rgba(10,12,15,0.92))] p-3 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur sm:p-4">
         <div className="mb-4 flex items-start justify-between gap-4 px-1 pt-1">
           <div>
-            <h2 className="text-xl font-semibold text-white">Bridge</h2>
-            <p className="mt-1 text-sm text-zinc-500">Ethereum, BNB Chain, Polygon, Base, Arbitrum, Avalanche</p>
+            <h2 className="text-[1.35rem] font-semibold text-white sm:text-xl">Bridge</h2>
+            <p className="mt-1 text-[13px] leading-6 text-zinc-500 sm:text-sm">
+              Ethereum, BNB Chain, Polygon, Base, Arbitrum, Avalanche
+            </p>
           </div>
           <div className="brand-chip rounded-md border px-2 py-1 text-xs font-medium">
             LI.FI
@@ -337,7 +345,7 @@ export function BridgeCard() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.7fr_1fr]">
             <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-xs">
                 Route
               </span>
               <div className="grid grid-cols-3 gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 p-2">
@@ -346,7 +354,7 @@ export function BridgeCard() {
                     key={preference}
                     type="button"
                     onClick={() => setRoutePreference(preference)}
-                    className={`min-h-11 rounded-md px-2 text-xs font-semibold transition ${
+                    className={`min-h-11 rounded-md px-2 text-[12px] font-semibold transition sm:text-xs ${
                       routePreference === preference
                         ? "brand-primary-button"
                         : "brand-border-hover border border-zinc-800 bg-zinc-950 text-zinc-300"
@@ -359,19 +367,25 @@ export function BridgeCard() {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+              <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-xs">
                 Slippage
               </span>
-              <select
-                value={slippage}
-                onChange={(event) => setSlippage(Number(event.target.value))}
-                className="brand-border-hover h-11 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus:border-[rgb(var(--brand-accent-rgb)/0.7)]"
-              >
-                <option value={0.003}>0.3%</option>
-                <option value={0.005}>0.5%</option>
-                <option value={0.01}>1.0%</option>
-                <option value={0.02}>2.0%</option>
-              </select>
+              <div className="grid grid-cols-2 gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 p-2">
+                {SLIPPAGE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSlippage(option.value)}
+                    className={`min-h-11 rounded-md px-2 text-[12px] font-semibold transition sm:text-xs ${
+                      slippage === option.value
+                        ? "brand-primary-button"
+                        : "brand-border-hover border border-zinc-800 bg-zinc-950 text-zinc-300"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </label>
           </div>
 
@@ -401,7 +415,7 @@ export function BridgeCard() {
             {buttonLabel}
           </button>
 
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-3 text-xs leading-5 text-zinc-500">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950/70 px-3 py-3 text-[13px] leading-6 text-zinc-500">
             Non-custodial execution only. Review the fee disclosure before bridging. See{" "}
             <Link href="/terms" className="font-medium text-zinc-300 transition hover:text-white">
               Terms

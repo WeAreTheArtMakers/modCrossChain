@@ -97,15 +97,15 @@ export function RouteInfoPanel({
                     : undefined
                 }
               >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                   {getPreferenceLabel(preference)}
                 </p>
-                <p className="mt-2 text-sm font-medium text-zinc-100">
+                <p className="mt-2 text-[15px] font-semibold text-zinc-100">
                   {option
                     ? `${formatTokenAmount(option.toAmount, option.toToken.decimals)} ${option.toToken.symbol}`
                     : "Unavailable"}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-[13px] text-zinc-500">
                   {option ? `${formatDuration(getRouteDuration(option))} • ${formatUsd(getRouteBridgeFeeUsd(option))}` : ""}
                 </p>
               </button>
@@ -116,12 +116,12 @@ export function RouteInfoPanel({
 
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">Best route</p>
-          <p className="mt-1 text-sm font-semibold text-white">{getRoutePreview(route)}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Best route</p>
+          <p className="mt-1 text-[15px] font-semibold text-white">{getRoutePreview(route)}</p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-zinc-500">Receive</p>
-          <p className="mt-1 text-sm font-semibold text-[rgb(var(--brand-accent-rgb))]">
+          <p className="text-[11px] text-zinc-500">Receive</p>
+          <p className="mt-1 text-[15px] font-semibold text-[rgb(var(--brand-accent-rgb))]">
             {formatTokenAmount(route.toAmount, route.toToken.decimals)} {destinationToken?.symbol ?? route.toToken.symbol}
           </p>
         </div>
