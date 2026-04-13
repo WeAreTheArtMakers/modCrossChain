@@ -9,14 +9,14 @@ export const revalidate = 45;
 export default function Home() {
   return (
     <main className="min-h-screen px-4 py-4 text-zinc-100 sm:px-6 lg:px-8">
-      <header className="mx-auto flex w-full max-w-[980px] flex-col gap-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+      <header className="mx-auto flex w-full max-w-[760px] flex-col gap-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
         <BrandSignature />
         <div className="self-end sm:self-auto">
           <ConnectWalletButton />
         </div>
       </header>
 
-      <section className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[980px] items-start justify-center pt-4 sm:items-center sm:pt-0">
+      <section className="mx-auto flex min-h-[calc(100vh-96px)] w-full max-w-[760px] items-start justify-center pt-4 sm:items-center sm:pt-0">
         <div className="w-full max-w-[480px]">
           <BridgeCard />
 

@@ -159,16 +159,16 @@ select {
 .brand-mark-node {
   transform: translate(-50%, -50%);
   box-shadow:
-    0 0 0 4px rgb(255 255 255 / 0.04),
-    0 0 26px currentColor;
+    0 0 0 3px rgb(255 255 255 / 0.04),
+    0 0 20px currentColor;
   animation: route-pulse 3.8s ease-in-out infinite;
 }
 
 .brand-mark-node-left {
   left: 20%;
   top: 58%;
-  height: 24px;
-  width: 24px;
+  height: 18px;
+  width: 18px;
   background: rgb(var(--brand-accent-rgb));
   color: rgb(var(--brand-accent-rgb));
 }
@@ -176,8 +176,8 @@ select {
 .brand-mark-node-right {
   left: 67%;
   top: 58%;
-  height: 24px;
-  width: 24px;
+  height: 18px;
+  width: 18px;
   background: rgb(253 129 168);
   color: rgb(253 129 168);
 }
@@ -185,8 +185,8 @@ select {
 .brand-mark-node-top {
   left: 47%;
   top: 28%;
-  height: 20px;
-  width: 20px;
+  height: 15px;
+  width: 15px;
   background: rgb(228 198 255);
   color: rgb(228 198 255);
 }
@@ -194,11 +194,11 @@ select {
 .brand-mark-node-center {
   left: 46%;
   top: 45%;
-  height: 8px;
-  width: 8px;
+  height: 7px;
+  width: 7px;
   background: rgb(255 151 181);
   color: rgb(255 151 181);
-  box-shadow: 0 0 18px currentColor;
+  box-shadow: 0 0 14px currentColor;
 }
 
 .brand-mark-node-large.brand-mark-node-left,
@@ -222,16 +222,16 @@ select {
 .brand-mark-shard-top {
   left: 61%;
   top: 16%;
-  height: 8px;
-  width: 8px;
+  height: 6px;
+  width: 6px;
   background: rgb(var(--brand-secondary-rgb));
 }
 
 .brand-mark-shard-left {
   left: 10%;
   top: 43%;
-  height: 6px;
-  width: 6px;
+  height: 5px;
+  width: 5px;
   background: rgb(var(--brand-secondary-rgb));
   animation-delay: 0.8s;
 }
@@ -239,8 +239,8 @@ select {
 .brand-mark-shard-right {
   left: 78%;
   top: 36%;
-  height: 7px;
-  width: 7px;
+  height: 5px;
+  width: 5px;
   background: rgb(255 151 181);
   animation-delay: 1.5s;
 }

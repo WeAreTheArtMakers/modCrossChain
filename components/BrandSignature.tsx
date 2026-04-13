@@ -2,14 +2,14 @@ import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/branding";
 
 export function BrandSignature() {
   return (
-    <div className="brand-signature-shell relative w-full max-w-[640px] overflow-hidden rounded-[26px] border border-white/8 px-4 py-4 shadow-[0_24px_90px_rgba(0,0,0,0.38)] sm:px-5 sm:py-5">
+    <div className="brand-signature-shell relative w-full max-w-[430px] overflow-hidden rounded-[22px] border border-white/8 px-3 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:px-4 sm:py-4">
       <div className="brand-signature-noise absolute inset-0" aria-hidden />
-      <div className="brand-signature-aurora absolute -left-10 top-0 h-40 w-40 rounded-full" aria-hidden />
-      <div className="brand-signature-aurora brand-signature-aurora-secondary absolute bottom-0 right-6 h-36 w-36 rounded-full" aria-hidden />
+      <div className="brand-signature-aurora absolute -left-8 top-0 h-28 w-28 rounded-full" aria-hidden />
+      <div className="brand-signature-aurora brand-signature-aurora-secondary absolute bottom-0 right-4 h-24 w-24 rounded-full" aria-hidden />
 
-      <div className="relative z-10 flex items-center gap-4 sm:gap-5">
-        <div className="brand-mark-frame relative h-[74px] w-[74px] shrink-0 rounded-[22px] sm:h-[92px] sm:w-[92px]">
-          <div className="brand-mark-grid absolute inset-[8px] rounded-[18px]" aria-hidden />
+      <div className="relative z-10 flex items-center gap-3 sm:gap-4">
+        <div className="brand-mark-frame relative h-[58px] w-[58px] shrink-0 rounded-[18px] sm:h-[68px] sm:w-[68px]">
+          <div className="brand-mark-grid absolute inset-[7px] rounded-[14px]" aria-hidden />
           <svg
             viewBox="0 0 128 128"
             className="absolute inset-0 h-full w-full"
@@ -30,8 +30,8 @@ export function BrandSignature() {
         </div>
 
         <div className="min-w-0">
-          <p className="truncate text-[1.7rem] font-semibold leading-none text-white sm:text-[2.35rem]">{BRAND_NAME}</p>
-          <p className="mt-2 max-w-[28rem] text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-400 sm:text-[13px]">
+          <p className="truncate text-[1.45rem] font-semibold leading-none text-white sm:text-[1.8rem]">{BRAND_NAME}</p>
+          <p className="mt-1.5 max-w-[18rem] text-[10px] font-medium tracking-[0.12em] text-zinc-400 sm:text-[11px]">
             {BRAND_TAGLINE}
           </p>
         </div>

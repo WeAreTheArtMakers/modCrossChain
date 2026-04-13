@@ -6,65 +6,79 @@
     <title>modCrossChain | Cross-chain bridge</title>
     <meta
       name="description"
-      content="modCrossChain is a non-custodial cross-chain bridge UI powered by LI.FI, built with Next.js, wagmi, viem, TailwindCSS, and Railway."
+      content="modCrossChain is a non-custodial cross-chain bridge interface powered by LI.FI with visible fee disclosure and wallet-only execution."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="shell">
       <header class="header">
-        <a href="./" aria-label="modCrossChain home">
-          <img src="./assets/modcrosschain-wordmark.svg" alt="modCrossChain" width="260" />
+        <a class="brandbar" href="./" aria-label="modCrossChain home">
+          <img src="./assets/modcrosschain-wordmark.svg" alt="modCrossChain" width="248" />
+          <span class="brandbar-note">English + Turkce product page</span>
         </a>
         <nav>
-          <a class="nav-link" href="#features">Features</a>
-          <a class="nav-link" href="#stack">Stack</a>
-          <a class="nav-link" href="#monetization">Monetization</a>
-          <a class="nav-link" href="#security">Security</a>
-          <a class="nav-link" href="#launch">Launch</a>
+          <a class="nav-link" href="#overview">Overview</a>
+          <a class="nav-link" href="#experience">Experience</a>
+          <a class="nav-link" href="#flow">Flow</a>
+          <a class="nav-link" href="#revenue">Revenue</a>
           <a class="nav-link" href="./terms.html">Terms</a>
         </nav>
       </header>
 
-      <section class="hero">
+      <section class="hero" id="overview">
         <div class="hero-copy">
-          <span class="eyebrow">LI.FI Aggregator + Wallet-Only Execution</span>
-          <h1>Bridge assets across chains without building a bridge protocol.</h1>
-          <p>
-            modCrossChain is a clean, dark, non-custodial bridge interface for Ethereum, BNB Chain,
-            Polygon, Base, Arbitrum, and Avalanche. It requests the best route from LI.FI, sends
-            transactions through the user&apos;s wallet, and keeps private keys entirely client-side.
+          <span class="eyebrow">LI.FI Aggregator | Wallet-only execution</span>
+          <h1>Cross-chain execution with one clear decision surface.</h1>
+          <p class="lead">
+            modCrossChain is a non-custodial bridge interface for Ethereum, BNB Chain, Polygon,
+            Base, Arbitrum, and Avalanche. It requests the best route from LI.FI, keeps signing in
+            the wallet, and shows costs before the user confirms.
           </p>
+          <p class="lead lead-tr">
+            modCrossChain; Ethereum, BNB Chain, Polygon, Base, Arbitrum ve Avalanche icin
+            gelistirilmis, saklamasiz bir bridge arayuzudur. En uygun rotayi LI.FI uzerinden alir,
+            imzayi cuzdanda tutar ve kullanici onaylamadan once maliyeti gosterir.
+          </p>
+
           <div class="cta-row">
-            <a class="button primary" href="https://modcrosschain-production.up.railway.app" target="_blank" rel="noreferrer">Launch Live App</a>
-            <a class="button secondary" href="https://github.com/WeAreTheArtMakers/modCrossChain" target="_blank" rel="noreferrer">View Repository</a>
+            <a class="button primary" href="https://modcrosschain-production.up.railway.app" target="_blank" rel="noreferrer">
+              Open live app
+            </a>
+            <a class="button secondary" href="https://github.com/WeAreTheArtMakers/modCrossChain" target="_blank" rel="noreferrer">
+              View repository
+            </a>
           </div>
+
           <div class="stat-row">
             <div class="stat">
               <strong>6</strong>
-              <span>Supported chains</span>
+              <span>Supported networks / Desteklenen aglar</span>
             </div>
             <div class="stat">
-              <strong>Client-side</strong>
-              <span>Wallet execution</span>
+              <strong>Wallet-only</strong>
+              <span>Execution stays client-side / Islem cuzdanda kalir</span>
             </div>
             <div class="stat">
               <strong>0.15%</strong>
-              <span>Starter integrator fee</span>
+              <span>Visible platform fee / Gorunen platform ucreti</span>
             </div>
           </div>
         </div>
 
         <div class="hero-visual">
-          <div class="hero-card hero-stage">
-            <div class="hero-stage-copy">
-              <p class="section-title">Route intelligence</p>
-              <h2>Route capital across six networks without leaving the wallet.</h2>
-              <p>
-                Live LI.FI quotes, wallet-native execution, visible fees, and route modes that stay
-                readable before signing.
-              </p>
+          <article class="hero-stage card">
+            <div class="section-labels">
+              <p class="section-title">Route Intelligence</p>
+              <p class="section-title tr-label">Rota gorunurlugu</p>
             </div>
+            <h2>Route capital across six networks without leaving the wallet.</h2>
+            <p class="section-copy compact-copy">
+              Cheapest, fastest, and best received remain readable before signing.
+            </p>
+            <p class="section-copy section-copy-tr compact-copy">
+              En ucuz, en hizli ve en iyi net alis secenekleri imzadan once okunabilir kalir.
+            </p>
 
             <div class="scene-shell" aria-hidden="true">
               <svg
@@ -97,175 +111,196 @@
               <span class="chip">Best received</span>
               <span class="chip">Visible fees</span>
             </div>
-          </div>
+          </article>
 
-          <div class="hero-preview">
+          <article class="hero-preview card">
             <img src="./assets/bridge-mobile.png" alt="modCrossChain mobile bridge preview" />
-            <div class="hero-meta">
-              <span class="chip">MetaMask</span>
-              <span class="chip">WalletConnect</span>
-              <span class="chip">wagmi + viem</span>
+            <div class="preview-copy">
+              <p class="mini-kicker">Live App</p>
+              <p>The product surface is now focused on bridge execution only.</p>
+              <p class="tr-copy">Canli uygulama artik yalnizca bridge akisina odaklanir.</p>
             </div>
-          </div>
+          </article>
         </div>
       </section>
 
-      <section class="section">
-        <div class="showcase">
-          <div class="showcase-copy">
-            <p class="section-title">Application</p>
-            <h2>The live app now keeps the surface focused on one thing: bridge execution.</h2>
-            <p class="section-copy">
-              Route storytelling stays here on GitHub Pages. The Railway application drops the
-              marketing panel and keeps the live product centered on chain choice, token lookup,
-              amount entry, route cost, ETA, and transaction follow-through.
-            </p>
+      <section class="section" id="experience">
+        <div class="section-heading">
+          <div class="section-labels">
+            <p class="section-title">Experience</p>
+            <p class="section-title tr-label">Deneyim</p>
           </div>
+          <h2>The live app is intentionally stripped back to the bridge.</h2>
+          <p class="section-copy">
+            The Railway application no longer carries a marketing panel. It opens with one job:
+            choose the route, review the fee, sign in the wallet, and track the transfer.
+          </p>
+          <p class="section-copy section-copy-tr">
+            Railway uzerindeki uygulama artik pazarlama paneli tasimiyor. Tek amaci; rotayi secmek,
+            ucreti gormek, cuzdanda imzalamak ve transferi takip etmek.
+          </p>
+        </div>
+
+        <div class="showcase">
           <div class="showcase-frame">
             <img src="./assets/bridge-desktop.png" alt="modCrossChain desktop bridge preview" />
           </div>
+          <div class="feature-stack">
+            <article class="card feature-card">
+              <h3>Focused execution</h3>
+              <p>Source chain, destination chain, token, amount, route mode, slippage, and status.</p>
+              <p class="tr-copy">Kaynak ag, hedef ag, token, miktar, rota modu, slippage ve durum.</p>
+            </article>
+            <article class="card feature-card">
+              <h3>Fee clarity</h3>
+              <p>Gas, bridge fee, and platform fee stay visible before any wallet confirmation.</p>
+              <p class="tr-copy">Gas, bridge ucreti ve platform ucreti cuzdan onayindan once gorunur.</p>
+            </article>
+            <article class="card feature-card">
+              <h3>Failure recovery</h3>
+              <p>Retry-friendly modal states, local history, copy-hash action, and explorer links.</p>
+              <p class="tr-copy">Yeniden denemeye uygun modal durumlari, local gecmis ve explorer baglantilari.</p>
+            </article>
+          </div>
         </div>
       </section>
 
-      <section id="features" class="section">
-        <p class="section-title">Product Highlights</p>
-        <h2>Minimal surface, practical routing, clear execution.</h2>
-        <p class="section-copy">
-          The interface is designed to feel fast and trustworthy: source and destination chain
-          selectors, searchable token metadata, debounced route requests, route cost visibility, and
-          a transaction status modal that follows the LI.FI execution lifecycle.
-        </p>
-
-        <div class="grid-3">
-          <article class="card">
-            <h3>Route intelligence</h3>
-            <p>Compares cheapest, fastest, and best received routes with visible gas, bridge fee, and platform fee disclosure.</p>
-          </article>
-          <article class="card">
-            <h3>Wallet-native flow</h3>
-            <p>All signing happens in the connected wallet. No custom custody, no private key handling, no backend signer.</p>
-          </article>
-          <article class="card">
-            <h3>Retention-ready</h3>
-            <p>Includes local transaction history, copy-hash actions, retry-friendly failure states, and explorer links.</p>
-          </article>
+      <section class="section" id="flow">
+        <div class="section-heading">
+          <div class="section-labels">
+            <p class="section-title">Flow</p>
+            <p class="section-title tr-label">Akis</p>
+          </div>
+          <h2>Aggregator-first execution keeps the product simple.</h2>
+          <p class="section-copy">
+            The product does not attempt to invent bridge infrastructure. It delegates route search
+            and execution to LI.FI and keeps the frontend responsible for clarity and wallet flow.
+          </p>
+          <p class="section-copy section-copy-tr">
+            Urun kendi bridge protokolunu yazmaya calismaz. Rota aramasi ve yurutmeyi LI.FI'a
+            birakir; arayuz ise netlik ve cuzdan akisina odaklanir.
+          </p>
         </div>
-      </section>
 
-      <section class="section">
-        <p class="section-title">How It Works</p>
-        <h2>Aggregator-first, wallet-native, easier to maintain.</h2>
         <div class="timeline">
           <article class="card">
             <span class="step">01</span>
-            <h3>Connect a wallet</h3>
-            <p>MetaMask or WalletConnect establishes the client-side signer and detects the active chain.</p>
+            <h3>Connect and detect</h3>
+            <p>Connect a wallet, detect the active chain, and set the source environment.</p>
+            <p class="tr-copy">Cuzdani bagla, aktif agi algila ve kaynak ortamini belirle.</p>
           </article>
           <article class="card">
             <span class="step">02</span>
-            <h3>Request the best route</h3>
-            <p>LI.FI resolves the cheapest, fastest, and best received route candidates for the selected token and destination.</p>
+            <h3>Quote and compare</h3>
+            <p>Request cheapest, fastest, and best received candidates from a single quote surface.</p>
+            <p class="tr-copy">Tek quote yuzeyinden en ucuz, en hizli ve en iyi net alis seceneklerini getir.</p>
           </article>
           <article class="card">
             <span class="step">03</span>
-            <h3>Execute and track</h3>
-            <p>The route is executed in the wallet, with status updates, transaction hash visibility, and explorer links.</p>
+            <h3>Sign and track</h3>
+            <p>Execute through the wallet, then follow status updates, hash visibility, and explorer links.</p>
+            <p class="tr-copy">Islemi cuzdanda yurut, sonra durum, hash ve explorer baglantilarini takip et.</p>
           </article>
         </div>
       </section>
 
-      <section id="stack" class="section">
-        <p class="section-title">Stack</p>
-        <h2>Built with a modern frontend and aggregator-first architecture.</h2>
-        <p class="section-copy">
-          The bridge UI is intentionally lightweight: App Router for structure, wagmi + viem for
-          wallet actions, and LI.FI for cross-chain route discovery and execution.
-        </p>
+      <section class="section two-col" id="revenue">
+        <article class="card">
+          <div class="section-labels">
+            <p class="section-title">Revenue</p>
+            <p class="section-title tr-label">Gelir modeli</p>
+          </div>
+          <h3>Per-transfer fee collection with visible disclosure</h3>
+          <p>
+            The clean model is an integrator fee on each bridge. The product should keep the fee
+            visible, avoid hidden markups, and preserve wallet-only execution.
+          </p>
+          <p class="tr-copy">
+            En temiz model, her bridge isleminde integrator fee almaktir. Ucret gorunur kalmali,
+            gizli marj olmamali ve cuzdan odakli akis korunmalidir.
+          </p>
+          <ul>
+            <li>Current starter fee: 0.15%</li>
+            <li>Wallet-only execution remains unchanged</li>
+            <li>Fee disclosure is built into the route panel</li>
+          </ul>
+        </article>
+
+        <article class="card" id="security">
+          <div class="section-labels">
+            <p class="section-title">Security</p>
+            <p class="section-title tr-label">Guvenlik</p>
+          </div>
+          <h3>Non-custodial by product definition</h3>
+          <p>
+            No backend signer, no stored private key, and no custom bridge protocol to maintain.
+            The frontend validates inputs and leaves execution to the connected wallet.
+          </p>
+          <p class="tr-copy">
+            Arka tarafta imzalayici yok, private key saklanmiyor ve bakimi zor bir ozel bridge
+            protokolu yazilmiyor. Arayuz girdileri dogrular ve islemi bagli cuzdana birakir.
+          </p>
+          <ul>
+            <li>Private keys never leave the wallet</li>
+            <li>Token validation runs before quote requests</li>
+            <li>Jurisdiction and terms pages are linked from the app</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="section" id="stack">
+        <div class="section-heading">
+          <div class="section-labels">
+            <p class="section-title">Stack</p>
+            <p class="section-title tr-label">Teknik yigin</p>
+          </div>
+          <h2>Lean frontend, aggregator-first backend boundaries.</h2>
+          <p class="section-copy">
+            The application is intentionally narrow: Next.js for product structure, wagmi plus viem
+            for wallet behavior, and LI.FI for route intelligence and execution.
+          </p>
+          <p class="section-copy section-copy-tr">
+            Uygulama bilincli olarak dar tutuldu: urun yapisi icin Next.js, cuzdan davranislari icin
+            wagmi ve viem, rota zekasi ve execution icin LI.FI kullaniliyor.
+          </p>
+        </div>
 
         <div class="grid-4">
-          <article class="card"><h4>Next.js 16</h4><p>App Router structure, production build pipeline, and typed React 19 client UI.</p></article>
-          <article class="card"><h4>TailwindCSS 4</h4><p>Dark editorial-finance styling with compact spacing and mobile-first layout control.</p></article>
-          <article class="card"><h4>wagmi + viem</h4><p>Client-side wallet connection, chain switching, balance checks, and signer access.</p></article>
-          <article class="card"><h4>LI.FI SDK</h4><p>Aggregator route search and route execution with no custom bridge protocol to maintain.</p></article>
+          <article class="card"><h4>Next.js 16</h4><p>App Router and production build pipeline.</p></article>
+          <article class="card"><h4>TailwindCSS 4</h4><p>Compact UI system for the bridge surface.</p></article>
+          <article class="card"><h4>wagmi + viem</h4><p>Wallet connection, balances, chain switching, and signer access.</p></article>
+          <article class="card"><h4>LI.FI SDK</h4><p>Route discovery and execution without a custom bridge protocol.</p></article>
         </div>
       </section>
 
-      <section class="section two-col">
-        <article class="card">
-          <p class="section-title">Supported Networks</p>
-          <h3>Ethereum, BNB Chain, Polygon, Base, Arbitrum, Avalanche</h3>
-          <ul>
-            <li>Configurable chain list for future expansion.</li>
-            <li>Source and destination routes resolved through LI.FI.</li>
-            <li>Dedicated RPC endpoints can be layered in per chain for production stability.</li>
-          </ul>
-        </article>
-
-        <article id="security" class="card">
-          <p class="section-title">Security</p>
-          <h3>Non-custodial by design</h3>
-          <ul>
-            <li>Client-side execution only.</li>
-            <li>Private keys never leave the wallet.</li>
-            <li>Token address validation and zero-amount rejection before route requests.</li>
-            <li>Integrator fee disclosure without changing custody model.</li>
-          </ul>
-        </article>
-      </section>
-
-      <section id="monetization" class="section two-col">
-        <article class="card">
-          <p class="section-title">Monetization</p>
-          <h3>Per-transfer revenue with fee transparency</h3>
-          <ul>
-            <li>Suggested starter LI.FI fee: 0.10% to 0.35%.</li>
-            <li>Current product recommendation: 0.15%.</li>
-            <li>Small-transfer minimum fee is disclosed clearly without breaking non-custodial execution.</li>
-            <li>Fee visibility is built directly into the route panel.</li>
-          </ul>
-        </article>
-
-        <article class="card">
-          <p class="section-title">Expansion</p>
-          <h3>Second revenue layers</h3>
-          <ul>
-            <li>Premium route analytics.</li>
-            <li>White-label bridge deployments for partners.</li>
-            <li>Affiliate and referral routing campaigns.</li>
-            <li>API or key-backed pro dashboard.</li>
-          </ul>
-        </article>
-      </section>
-
-      <section id="launch" class="section">
-        <p class="section-title">Launch</p>
-        <h2>Use GitHub Pages for product presentation and Railway for the live bridge.</h2>
-        <p class="section-copy">
-          GitHub Pages is a strong fit for a static product page, release notes, onboarding,
-          screenshots, and marketing copy. The live bridge application itself runs better on Railway
-          where the full Next.js app can be deployed and updated independently.
-        </p>
-        <div class="cta-row">
-          <a class="button primary" href="https://modcrosschain-production.up.railway.app" target="_blank" rel="noreferrer">Open Railway App</a>
-          <a class="button secondary" href="https://github.com/WeAreTheArtMakers/modCrossChain" target="_blank" rel="noreferrer">Open GitHub Repo</a>
+      <section class="section final-band" id="launch">
+        <div class="section-heading">
+          <div class="section-labels">
+            <p class="section-title">Launch</p>
+            <p class="section-title tr-label">Yayin</p>
+          </div>
+          <h2>GitHub Pages tells the story. Railway runs the bridge.</h2>
+          <p class="section-copy">
+            Pages carries the product narrative, screenshots, and bilingual explanation. Railway
+            serves the live app where the bridge is the only primary task on screen.
+          </p>
+          <p class="section-copy section-copy-tr">
+            Pages urun hikayesini, ekran goruntulerini ve iki dilli anlatimi tasir. Railway ise
+            ekranda yalnizca bridge gorevini birakan canli urunu sunar.
+          </p>
         </div>
-      </section>
 
-      <section class="section">
-        <p class="section-title">Operations</p>
-        <h2>Compliance text and operating guidance are included in the release.</h2>
-        <p class="section-copy">
-          The release now includes draft Terms and Supported Jurisdictions pages for both the live
-          app and GitHub Pages. They should be reviewed by counsel before broader launch.
-        </p>
         <div class="cta-row">
-          <a class="button secondary" href="./terms.html">Read Terms</a>
-          <a class="button secondary" href="./jurisdictions.html">Read Jurisdictions</a>
+          <a class="button primary" href="https://modcrosschain-production.up.railway.app" target="_blank" rel="noreferrer">
+            Open Railway app
+          </a>
+          <a class="button secondary" href="./jurisdictions.html">Supported jurisdictions</a>
+          <a class="button secondary" href="./terms.html">Read terms</a>
         </div>
       </section>
 
       <footer class="footer">
-        <div>modCrossChain. Built for wallet-native cross-chain execution with an aggregator-first approach.</div>
+        <div>modCrossChain. Wallet-native bridge execution with visible fee collection.</div>
         <div class="footer-links">
           <a href="./terms.html">Terms</a>
           <a href="./jurisdictions.html">Supported Jurisdictions</a>
