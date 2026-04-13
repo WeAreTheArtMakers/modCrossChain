@@ -27,7 +27,7 @@
       </header>
 
       <section class="hero">
-        <div>
+        <div class="hero-copy">
           <span class="eyebrow">LI.FI Aggregator + Wallet-Only Execution</span>
           <h1>Bridge assets across chains without building a bridge protocol.</h1>
           <p>
@@ -55,13 +55,57 @@
           </div>
         </div>
 
-        <div class="hero-card">
-          <img src="./assets/bridge-mobile.png" alt="modCrossChain mobile bridge preview" />
-          <div class="hero-meta">
-            <span class="chip">MetaMask</span>
-            <span class="chip">WalletConnect</span>
-            <span class="chip">wagmi + viem</span>
-            <span class="chip">Railway deployment</span>
+        <div class="hero-visual">
+          <div class="hero-card hero-stage">
+            <div class="hero-stage-copy">
+              <p class="section-title">Route intelligence</p>
+              <h2>Route capital across six networks without leaving the wallet.</h2>
+              <p>
+                Live LI.FI quotes, wallet-native execution, visible fees, and route modes that stay
+                readable before signing.
+              </p>
+            </div>
+
+            <div class="scene-shell" aria-hidden="true">
+              <svg
+                viewBox="0 0 460 270"
+                class="route-wires"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M62 44C128 28 162 29 202 34C260 41 304 54 356 76" class="route-wire route-wire-primary" />
+                <path d="M62 44C95 118 100 170 108 220" class="route-wire route-wire-secondary" />
+                <path d="M202 34C204 114 228 174 270 214" class="route-wire route-wire-primary route-wire-delay" />
+                <path d="M356 76C348 132 358 157 402 164" class="route-wire route-wire-secondary route-wire-delay" />
+                <path d="M108 220C176 218 222 214 270 214" class="route-wire route-wire-primary route-wire-delay-2" />
+                <path d="M270 214C320 236 360 214 422 182" class="route-wire route-wire-secondary route-wire-delay-2" />
+              </svg>
+              <span class="scene-node scene-node-eth">ETH</span>
+              <span class="scene-node scene-node-bnb">BNB</span>
+              <span class="scene-node scene-node-pol">POL</span>
+              <span class="scene-node scene-node-base">BASE</span>
+              <span class="scene-node scene-node-arb">ARB</span>
+              <span class="scene-node scene-node-avax">AVAX</span>
+              <span class="scene-scan"></span>
+              <span class="scene-glow scene-glow-a"></span>
+              <span class="scene-glow scene-glow-b"></span>
+            </div>
+
+            <div class="hero-meta hero-meta-grid">
+              <span class="chip">Cheapest</span>
+              <span class="chip">Fastest</span>
+              <span class="chip">Best received</span>
+              <span class="chip">Visible fees</span>
+            </div>
+          </div>
+
+          <div class="hero-preview">
+            <img src="./assets/bridge-mobile.png" alt="modCrossChain mobile bridge preview" />
+            <div class="hero-meta">
+              <span class="chip">MetaMask</span>
+              <span class="chip">WalletConnect</span>
+              <span class="chip">wagmi + viem</span>
+            </div>
           </div>
         </div>
       </section>
@@ -69,12 +113,12 @@
       <section class="section">
         <div class="showcase">
           <div class="showcase-copy">
-            <p class="section-title">Interface</p>
-            <h2>A compact bridge card with route clarity built in.</h2>
+            <p class="section-title">Application</p>
+            <h2>The live app now keeps the surface focused on one thing: bridge execution.</h2>
             <p class="section-copy">
-              The product focuses on the decision surface that matters: chain choice, token lookup,
-              amount entry, route cost, ETA, and transaction follow-through. The dark visual system
-              keeps attention on execution rather than decoration.
+              Route storytelling stays here on GitHub Pages. The Railway application drops the
+              marketing panel and keeps the live product centered on chain choice, token lookup,
+              amount entry, route cost, ETA, and transaction follow-through.
             </p>
           </div>
           <div class="showcase-frame">
