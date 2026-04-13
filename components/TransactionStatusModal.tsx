@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { getRoutePreview } from "@/lib/format";
 import { getExecutionProcesses } from "@/lib/transactions";
 import type { BridgeExecutionState } from "@/types/bridge";
@@ -20,18 +21,28 @@ export default function TransactionStatusModal({
 }: TransactionStatusModalProps) {
   const [copied, setCopied] = useState(false);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
   const processes = execution.route ? getExecutionProcesses(execution.route) : [];
   const title = getTitle(execution.phase);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center">
-      <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-[#0d100f] p-4 shadow-2xl shadow-black">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-4 backdrop-blur-sm sm:items-center"
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transaction-status-title"
+        className="w-full max-w-md rounded-lg border border-zinc-800 bg-[#0d100f] p-4 shadow-2xl shadow-black"
+      >
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#ba9eff]">Transaction</p>
-            <h3 className="mt-1 text-xl font-semibold text-white">{title}</h3>
+            <h3 id="transaction-status-title" className="mt-1 text-xl font-semibold text-white">
+              {title}
+            </h3>
           </div>
           <button
             type="button"
@@ -127,7 +138,8 @@ export default function TransactionStatusModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
