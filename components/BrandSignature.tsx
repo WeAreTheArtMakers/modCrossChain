@@ -1,37 +1,28 @@
-import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/branding";
+import Image from "next/image";
+import { BRAND_MARK_SRC, BRAND_NAME, BRAND_TAGLINE } from "@/lib/branding";
 
 export function BrandSignature() {
   return (
-    <div className="brand-signature-shell relative w-full max-w-[430px] overflow-hidden rounded-[22px] border border-white/8 px-3 py-3 shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:px-4 sm:py-4">
+    <div className="brand-signature-shell relative w-full max-w-[360px] overflow-hidden rounded-[22px] border border-white/8 px-3 py-3 shadow-[0_18px_48px_rgba(0,0,0,0.28)] sm:px-3.5 sm:py-3.5">
       <div className="brand-signature-noise absolute inset-0" aria-hidden />
-      <div className="brand-signature-aurora absolute -left-8 top-0 h-28 w-28 rounded-full" aria-hidden />
-      <div className="brand-signature-aurora brand-signature-aurora-secondary absolute bottom-0 right-4 h-24 w-24 rounded-full" aria-hidden />
+      <div className="brand-signature-aurora absolute -left-8 top-0 h-24 w-24 rounded-full" aria-hidden />
+      <div className="brand-signature-aurora brand-signature-aurora-secondary absolute bottom-0 right-3 h-20 w-20 rounded-full" aria-hidden />
 
-      <div className="relative z-10 flex items-center gap-3 sm:gap-4">
-        <div className="brand-mark-frame relative h-[58px] w-[58px] shrink-0 rounded-[18px] sm:h-[68px] sm:w-[68px]">
-          <div className="brand-mark-grid absolute inset-[7px] rounded-[14px]" aria-hidden />
-          <svg
-            viewBox="0 0 128 128"
-            className="absolute inset-0 h-full w-full"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden
-          >
-            <path d="M32 76C42.6667 58.6667 55.3333 50 70 50C83.3333 50 94 57 102 71" className="brand-mark-arc" />
-          </svg>
-
-          <span className="brand-mark-node brand-mark-node-left" aria-hidden />
-          <span className="brand-mark-node brand-mark-node-right" aria-hidden />
-          <span className="brand-mark-node brand-mark-node-top" aria-hidden />
-          <span className="brand-mark-node brand-mark-node-center" aria-hidden />
-          <span className="brand-mark-shard brand-mark-shard-top" aria-hidden />
-          <span className="brand-mark-shard brand-mark-shard-left" aria-hidden />
-          <span className="brand-mark-shard brand-mark-shard-right" aria-hidden />
+      <div className="relative z-10 flex min-h-[54px] items-center gap-3">
+        <div className="brand-mark-frame relative flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px] sm:h-[54px] sm:w-[54px]">
+          <Image
+            src={BRAND_MARK_SRC}
+            alt={BRAND_NAME}
+            width={128}
+            height={128}
+            priority
+            className="h-[38px] w-[38px] sm:h-[42px] sm:w-[42px]"
+          />
         </div>
 
-        <div className="min-w-0">
-          <p className="truncate text-[1.45rem] font-semibold leading-none text-white sm:text-[1.8rem]">{BRAND_NAME}</p>
-          <p className="mt-1.5 max-w-[18rem] text-[10px] font-medium tracking-[0.12em] text-zinc-400 sm:text-[11px]">
+        <div className="flex min-w-0 flex-col justify-center">
+          <p className="truncate text-[1.3rem] font-semibold leading-none text-white sm:text-[1.55rem]">{BRAND_NAME}</p>
+          <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-400 sm:text-[10px]">
             {BRAND_TAGLINE}
           </p>
         </div>
