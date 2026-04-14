@@ -169,6 +169,9 @@ NEXT_PUBLIC_POLYGON_RPC_URL=
 NEXT_PUBLIC_BASE_RPC_URL=
 NEXT_PUBLIC_ARBITRUM_RPC_URL=
 NEXT_PUBLIC_AVALANCHE_RPC_URL=
+NEXT_PUBLIC_RPC_HEALTH_TIMEOUT_MS=2200
+NEXT_PUBLIC_RPC_HEALTH_SLOW_THRESHOLD_MS=700
+NEXT_PUBLIC_RPC_HEALTH_BLOCK_THRESHOLD_MS=1400
 NEXT_PUBLIC_BRAND_NAME=modCrossChain
 NEXT_PUBLIC_BRAND_TAGLINE=Non-custodial cross-chain bridge
 NEXT_PUBLIC_BRAND_HEADLINE=Route capital across six networks without leaving the wallet.
@@ -184,8 +187,9 @@ Operational notes:
 - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is required for WalletConnect support.
 - `LIFI_API_KEY` should be set server-side in production. Do not expose it in `NEXT_PUBLIC_*`.
 - `NEXT_PUBLIC_LIFI_INTEGRATOR` must exactly match the string shown in the LI.FI portal. For this app, use `modcrosschain`.
-- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` enable shared rate limiting and response caching across Railway instances.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are optional. Use them only when Railway runs more than one instance.
 - dedicated RPC endpoints are recommended for production reliability and now fall back to public RPCs if any chain is missing.
+- in production, the default RPC health profile is tighter: `2200 ms timeout`, `700 ms slow`, `1400 ms block`.
 - `NEXT_PUBLIC_APP_URL` should match the production domain so wallet metadata is accurate.
 - `NEXT_PUBLIC_LIFI_FEE` is optional but now fully surfaced in the UI.
 - `NEXT_PUBLIC_ENABLE_TEST_WALLET=true` enables the mock connector used by Playwright.
@@ -200,7 +204,31 @@ npm run typecheck
 npm run lint
 npm run build
 npm run start
+npm run test:prod-smoke
 ```
+
+## Production Smoke
+
+Use the production smoke suite against the live Railway app and GitHub Pages landing:
+
+```bash
+PLAYWRIGHT_PROD_APP_URL=https://modcrosschain-production.up.railway.app \
+PLAYWRIGHT_PROD_PAGES_URL=https://wearetheartmakers.github.io/modCrossChain/ \
+npm run test:prod-smoke
+```
+
+Optional admin verification:
+
+```bash
+PLAYWRIGHT_PROD_ADMIN_TOKEN=your_private_admin_token npm run test:prod-smoke
+```
+
+The smoke suite checks:
+
+- production app shell
+- `/api/infra/rpc-health`
+- GitHub Pages landing
+- admin fee summary when the admin token is provided
 
 ## Railway Deployment
 
@@ -213,11 +241,25 @@ railway variable set NEXT_PUBLIC_LIFI_INTEGRATOR=modcrosschain
 railway variable set NEXT_PUBLIC_LIFI_FEE=0.0015
 railway variable set NEXT_PUBLIC_MIN_PLATFORM_FEE_NOTICE_USD=0.50
 railway variable set NEXT_PUBLIC_APP_URL=https://your-domain.example
-railway variable set UPSTASH_REDIS_REST_URL=your_upstash_rest_url
-railway variable set UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
+railway variable set NEXT_PUBLIC_ETHEREUM_RPC_URL=https://your-dedicated-ethereum-rpc
+railway variable set NEXT_PUBLIC_BNB_RPC_URL=https://your-dedicated-bnb-rpc
+railway variable set NEXT_PUBLIC_POLYGON_RPC_URL=https://your-dedicated-polygon-rpc
+railway variable set NEXT_PUBLIC_BASE_RPC_URL=https://your-dedicated-base-rpc
+railway variable set NEXT_PUBLIC_ARBITRUM_RPC_URL=https://your-dedicated-arbitrum-rpc
+railway variable set NEXT_PUBLIC_AVALANCHE_RPC_URL=https://your-dedicated-avalanche-rpc
+railway variable set NEXT_PUBLIC_RPC_HEALTH_TIMEOUT_MS=2200
+railway variable set NEXT_PUBLIC_RPC_HEALTH_SLOW_THRESHOLD_MS=700
+railway variable set NEXT_PUBLIC_RPC_HEALTH_BLOCK_THRESHOLD_MS=1400
 railway variable set ADMIN_DIAGNOSTICS_TOKEN=your_private_admin_token
 railway variable set NIXPACKS_NODE_VERSION=22
 railway up
+```
+
+Add Upstash only if you scale Railway beyond one instance:
+
+```bash
+railway variable set UPSTASH_REDIS_REST_URL=your_upstash_rest_url
+railway variable set UPSTASH_REDIS_REST_TOKEN=your_upstash_rest_token
 ```
 
 `NIXPACKS_NODE_VERSION=22` is pinned so Railway uses a Node version compatible with Next.js 16.

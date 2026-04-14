@@ -1,6 +1,7 @@
 import { fallback, http } from "wagmi";
 import { arbitrum, avalanche, base, bsc, mainnet, polygon } from "viem/chains";
 import {
+  APP_ENV,
   RPC_ENDPOINTS,
   RPC_HEALTH_BLOCK_THRESHOLD_MS,
   RPC_HEALTH_SLOW_THRESHOLD_MS,
@@ -73,12 +74,18 @@ function getRpcCoverageSummary() {
   return {
     configuredCount: coverageEntries.filter((entry) => entry.configured).length,
     missing: coverageEntries.filter((entry) => !entry.configured).map((entry) => entry.label),
+    profile: APP_ENV,
     status:
       coverageEntries.every((entry) => entry.configured)
         ? "FULLY_COVERED"
         : coverageEntries.some((entry) => entry.configured)
           ? "PARTIAL"
           : "PUBLIC_FALLBACK",
+    thresholds: {
+      blockThresholdMs: RPC_HEALTH_BLOCK_THRESHOLD_MS,
+      slowThresholdMs: RPC_HEALTH_SLOW_THRESHOLD_MS,
+      timeoutMs: RPC_HEALTH_TIMEOUT_MS,
+    },
     totalCount: coverageEntries.length,
   } satisfies Omit<RpcHealthSummary, "results">;
 }

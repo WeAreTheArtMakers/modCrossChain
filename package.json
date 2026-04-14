@@ -16,7 +16,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:prod-smoke": "playwright test -c playwright.prod.config.ts"
   },
   "dependencies": {
     "@lifi/sdk": "^3.16.3",

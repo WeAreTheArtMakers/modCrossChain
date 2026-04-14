@@ -1,5 +1,10 @@
 const INTEGRATOR_PATTERN = /[^a-zA-Z0-9._-]/g;
 
+export const APP_ENV = (process.env.NEXT_PUBLIC_APP_ENV?.trim().toLowerCase() || "development") as
+  | "development"
+  | "production";
+export const IS_PRODUCTION_APP = APP_ENV === "production";
+
 export const LIFI_INTEGRATOR = (
   process.env.NEXT_PUBLIC_LIFI_INTEGRATOR || "modcrosschain"
 )
@@ -29,23 +34,35 @@ export const RPC_ENDPOINTS = {
   polygon: process.env.NEXT_PUBLIC_POLYGON_RPC_URL?.trim() || undefined,
 } as const;
 
+const defaultRpcThresholds = IS_PRODUCTION_APP
+  ? {
+      blockMs: 1400,
+      slowMs: 700,
+      timeoutMs: 2200,
+    }
+  : {
+      blockMs: 1800,
+      slowMs: 900,
+      timeoutMs: 2500,
+    };
+
 export const RPC_HEALTH_TIMEOUT_MS = clampMilliseconds(
-  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_TIMEOUT_MS ?? "2500"),
+  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_TIMEOUT_MS ?? String(defaultRpcThresholds.timeoutMs)),
   800,
   10_000,
-  2500,
+  defaultRpcThresholds.timeoutMs,
 );
 export const RPC_HEALTH_SLOW_THRESHOLD_MS = clampMilliseconds(
-  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_SLOW_THRESHOLD_MS ?? "900"),
+  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_SLOW_THRESHOLD_MS ?? String(defaultRpcThresholds.slowMs)),
   200,
   5_000,
-  900,
+  defaultRpcThresholds.slowMs,
 );
 export const RPC_HEALTH_BLOCK_THRESHOLD_MS = clampMilliseconds(
-  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_BLOCK_THRESHOLD_MS ?? "1800"),
+  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_BLOCK_THRESHOLD_MS ?? String(defaultRpcThresholds.blockMs)),
   RPC_HEALTH_SLOW_THRESHOLD_MS + 100,
   8_000,
-  1800,
+  defaultRpcThresholds.blockMs,
 );
 
 export const HAS_DEDICATED_RPC_COVERAGE = Object.values(RPC_ENDPOINTS).every(Boolean);

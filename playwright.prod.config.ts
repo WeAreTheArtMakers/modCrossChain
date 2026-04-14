@@ -1,26 +1,27 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const prodAppUrl = process.env.PLAYWRIGHT_PROD_APP_URL || "https://modcrosschain-production.up.railway.app";
+const prodPagesUrl =
+  process.env.PLAYWRIGHT_PROD_PAGES_URL || "https://wearetheartmakers.github.io/modCrossChain/";
+
 export default defineConfig({
   testDir: "./tests/e2e",
-  testIgnore: ["**/prod-smoke.spec.ts"],
-  timeout: 45_000,
+  testMatch: "prod-smoke.spec.ts",
+  timeout: 60_000,
   expect: {
-    timeout: 8_000,
+    timeout: 10_000,
   },
   fullyParallel: false,
-  retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["html"], ["list"]] : "list",
   workers: 1,
+  metadata: {
+    prodAppUrl,
+    prodPagesUrl,
+  },
   use: {
-    baseURL: "http://localhost:3001",
+    baseURL: prodAppUrl,
     screenshot: "only-on-failure",
     trace: "retain-on-failure",
-  },
-  webServer: {
-    command: "NEXT_PUBLIC_ENABLE_TEST_WALLET=true NEXT_PUBLIC_APP_URL=http://localhost:3001 npm run dev -- --port 3001",
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    url: "http://localhost:3001",
   },
   projects: [
     {
