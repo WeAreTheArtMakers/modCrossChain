@@ -1,6 +1,11 @@
 import { fallback, http } from "wagmi";
 import { arbitrum, avalanche, base, bsc, mainnet, polygon } from "viem/chains";
-import { RPC_ENDPOINTS } from "@/lib/env";
+import {
+  RPC_ENDPOINTS,
+  RPC_HEALTH_BLOCK_THRESHOLD_MS,
+  RPC_HEALTH_SLOW_THRESHOLD_MS,
+  RPC_HEALTH_TIMEOUT_MS,
+} from "@/lib/env";
 import type { RpcHealthSummary, RpcProbeResult, RpcProbeSource } from "@/types/rpc";
 
 type TransportChain = typeof mainnet | typeof bsc | typeof polygon | typeof base | typeof arbitrum | typeof avalanche;
@@ -93,7 +98,7 @@ async function probeRpcEntry(entry: RpcProbeEntry): Promise<RpcProbeResult> {
         "content-type": "application/json",
       },
       method: "POST",
-      signal: AbortSignal.timeout(2_500),
+      signal: AbortSignal.timeout(RPC_HEALTH_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -121,13 +126,23 @@ async function probeRpcEntry(entry: RpcProbeEntry): Promise<RpcProbeResult> {
     }
 
     const latencyMs = Date.now() - startedAt;
+    const status =
+      latencyMs >= RPC_HEALTH_BLOCK_THRESHOLD_MS
+        ? "UNAVAILABLE"
+        : latencyMs >= RPC_HEALTH_SLOW_THRESHOLD_MS
+          ? "SLOW"
+          : "HEALTHY";
 
     return {
       chainId: entry.chainId,
+      error:
+        status === "UNAVAILABLE"
+          ? `Latency ${latencyMs} ms exceeded the block threshold of ${RPC_HEALTH_BLOCK_THRESHOLD_MS} ms.`
+          : undefined,
       label: entry.label,
       latencyMs,
       source: entry.source,
-      status: latencyMs >= 1_250 ? "SLOW" : "HEALTHY",
+      status,
     };
   } catch (error) {
     return {

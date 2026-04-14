@@ -20,10 +20,10 @@ const destinationToken = {
   symbol: "USDC",
 };
 
-test("renders the desktop showcase and invalid state", async ({ page }) => {
+test("renders the bridge surface and disconnected state", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByText("Route intelligence")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bridge" })).toBeVisible();
   await expect(page.getByText("Connect a wallet to request a bridge route.")).toBeVisible();
   await expect(page.locator("header").getByRole("button", { name: "Connect wallet" })).toBeVisible();
 });
@@ -100,7 +100,7 @@ async function waitForMockWallet(page: Page) {
       .catch(() => false);
 
     if (!connectedAfterClick) {
-      const mockConnectorButton = page.getByRole("button", { name: /Mock Connector/i });
+      const mockConnectorButton = page.getByRole("button", { name: /Test wallet/i });
       if (await mockConnectorButton.isVisible().catch(() => false)) {
         await mockConnectorButton.click();
       }

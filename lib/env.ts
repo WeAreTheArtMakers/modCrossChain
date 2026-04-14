@@ -29,6 +29,25 @@ export const RPC_ENDPOINTS = {
   polygon: process.env.NEXT_PUBLIC_POLYGON_RPC_URL?.trim() || undefined,
 } as const;
 
+export const RPC_HEALTH_TIMEOUT_MS = clampMilliseconds(
+  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_TIMEOUT_MS ?? "2500"),
+  800,
+  10_000,
+  2500,
+);
+export const RPC_HEALTH_SLOW_THRESHOLD_MS = clampMilliseconds(
+  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_SLOW_THRESHOLD_MS ?? "900"),
+  200,
+  5_000,
+  900,
+);
+export const RPC_HEALTH_BLOCK_THRESHOLD_MS = clampMilliseconds(
+  Number(process.env.NEXT_PUBLIC_RPC_HEALTH_BLOCK_THRESHOLD_MS ?? "1800"),
+  RPC_HEALTH_SLOW_THRESHOLD_MS + 100,
+  8_000,
+  1800,
+);
+
 export const HAS_DEDICATED_RPC_COVERAGE = Object.values(RPC_ENDPOINTS).every(Boolean);
 
 function clampSlippage(value: number) {
@@ -57,4 +76,12 @@ function clampSampleRate(value: number) {
   }
 
   return Math.min(value, 1);
+}
+
+function clampMilliseconds(value: number, min: number, max: number, fallback: number) {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(Math.round(value), min), max);
 }
